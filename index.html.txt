@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#faf7f0" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#09090b" media="(prefers-color-scheme: dark)">
+<title>Bilinha Jóias e Pratas</title>
+<meta name="description" content="Bilinha Jóias e Pratas, São Bento – PB. Pratas 925, alianças, relógios e peças selecionadas.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Inter:wght@400;600&display=swap">
+<link rel="stylesheet" href="css/style.css">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"JewelryStore","name":"Bilinha Jóias e Pratas","description":"Pratas 925, alianças, relógios e peças selecionadas.","areaServed":"BR"}
+</script>
+</head>
+<body>
+<header class="hd">
+  <div class="w">
+    <a href="#top" class="logo" aria-label="Bilinha Jóias e Pratas">
+      <i data-i="gem" data-s="28"></i>
+      <span><b>Bilinha</b><small>Jóias e Pratas</small></span>
+    </a>
+    <div class="hs"><i data-i="search" data-s="18"></i><input id="qh" class="in qi" placeholder="Buscar peças ou categorias" aria-label="Buscar"></div>
+    <div class="row" style="margin-left:auto">
+      <button class="q" data-a="theme" aria-label="Alternar tema"><i data-i="moon" data-s="18"></i></button>
+      <button class="q bg" data-a="cart" aria-label="Abrir sacola"><i data-i="bag" data-s="20"></i><span id="bd" class="bd gold hid">0</span></button>
+    </div>
+  </div>
+  <nav id="chips" class="chips" aria-label="Categorias"></nav>
+</header>
+<main id="top">
+  <section id="bnr" class="w hid"></section>
+  <section id="hero" class="w">
+    <div class="hero">
+      <p id="hk" class="k">São Bento · Paraíba</p>
+      <h1 id="ht">Autenticidade e Tradição que Brilham em <span class="gt">Joias</span></h1>
+      <hr>
+      <p id="hx" class="t">Pratas 925, alianças, relógios e peças selecionadas com cuidado. Escolha o que ama e finalize no WhatsApp.</p>
+      <div class="cta">
+        <a href="#colecao" class="b gold">Explorar Coleção</a>
+        <a id="hw" href="#" target="_blank" rel="noopener" class="b ghost-g"><i data-i="wa" data-s="18"></i>Falar no WhatsApp</a>
+      </div>
+    </div>
+  </section>
+  <div id="rails"></div>
+  <section id="colecao" class="w sec">
+    <div class="row sp wrap">
+      <div><h2 class="serif h2">Nossa coleção</h2><p id="cnt" class="sm tm"></p></div>
+      <div class="row">
+        <input id="qm" class="in qi ms" style="flex:1;min-width:0" placeholder="Buscar peças" aria-label="Buscar">
+        <select id="so" class="in" style="width:auto" aria-label="Ordenar por">
+          <option value="feat">Destaques</option>
+          <option value="new">Mais recentes</option>
+          <option value="lo">Menor preço</option>
+          <option value="hi">Maior preço</option>
+        </select>
+      </div>
+    </div>
+    <div id="grid" class="gr"><div class="cd-i sk"></div><div class="cd-i sk"></div><div class="cd-i sk"></div><div class="cd-i sk"></div></div>
+    <button id="more" class="b ghost more hid" data-a="more">Ver mais peças</button>
+  </section>
+</main>
+<footer id="ft" class="ft w"></footer>
+<div id="ov" class="ov hid" data-a="close"></div>
+<aside id="drw" class="dr" aria-label="Sacola">
+  <header><h2 class="serif h2">Sua sacola</h2><button class="q" data-a="close" aria-label="Fechar"><i data-i="x" data-s="18"></i></button></header>
+  <div id="ci" class="ci-list"></div>
+  <footer>
+    <input id="nm" class="in" placeholder="Seu nome" autocomplete="name">
+    <input id="addr" class="in" placeholder="Endereço e cidade" autocomplete="street-address">
+    <select id="pay" class="in" aria-label="Forma de pagamento">
+      <option>Pix</option><option>Cartão de crédito</option><option>Cartão de débito</option><option>Dinheiro</option>
+    </select>
+    <div class="row sp"><span class="tm">Subtotal</span><strong id="sub" class="serif tg h3"></strong></div>
+    <p id="cerr" class="err hid"></p>
+    <a id="fin" href="#" target="_blank" rel="noopener" class="b gold" data-a="fin"><i data-i="wa" data-s="18"></i>Finalizar Pedido no WhatsApp</a>
+    <button id="cb" class="b ghost hid" data-a="clr">Limpar sacola</button>
+  </footer>
+</aside>
+<div id="lg" class="md hid"><div role="dialog" aria-modal="true" aria-label="Acesso restrito">
+  <h2 class="serif h2">Acesso restrito</h2>
+  <input id="pw" type="password" class="in" placeholder="Senha" autocomplete="current-password">
+  <p id="pe" class="err hid"></p>
+  <div class="row"><button class="b ghost grow" data-a="close">Cancelar</button><button class="b gold grow" data-a="login">Entrar</button></div>
+</div></div>
+<div id="pm" class="md pm hid"><div id="pmb" role="dialog" aria-modal="true"></div></div>
+<div id="adm" class="ad hid"></div>
+<div id="ts" class="ts gold hid" role="status" aria-live="polite"></div>
+<script src="js/config.js" defer></script>
+<script src="js/storage.js" defer></script>
+<script src="js/images.js" defer></script>
+<script src="js/auth.js" defer></script>
+<script src="js/shop.js" defer></script>
+<script src="js/admin.js" defer></script>
+<script src="js/app.js" defer></script>
+</body>
+</html>
