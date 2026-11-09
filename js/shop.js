@@ -89,10 +89,10 @@ function banner(){
   stop();el.classList.toggle('hid',!L.length);$('hero').classList.toggle('hid',!!L.length);
   if(!L.length){el.innerHTML='';return}
   BN.n=L.length;BN.i=Math.min(BN.i,BN.n-1);
-  el.innerHTML=`<div class="bn" id="bnv" role="region" aria-roledescription="carrossel" aria-label="Destaques da loja" tabindex="0"><div class="bn-t" id="bnt">${L.map((b,i)=>{
+  el.innerHTML=`<div class="bn${L.some(b=>b.title||b.sub||b.btn)?' tx':''}" id="bnv" role="region" aria-roledescription="carrossel" aria-label="Destaques da loja" tabindex="0"><div class="bn-t" id="bnt">${L.map((b,i)=>{
     const t=b.title||b.sub||b.btn;
     return`<div class="bn-s${b.img?' sk':' hero'}${i===BN.i?' on':''}" role="group" aria-roledescription="slide" aria-label="${i+1} de ${L.length}">
-      ${b.img?IMG.html(b.img,{s:'full',alt:b.title||'Banner',eager:i===0}):''}
+      ${b.img?IMG.html(b.img,{s:'full',alt:b.title||'Banner',eager:i===0,now:1}):''}
       ${t?`<div class="bn-c">${b.title?`<h2>${esc(b.title)}</h2>`:''}${b.sub?`<p>${esc(b.sub)}</p>`:''}${b.btn?`<a class="b gold" target="_blank" rel="noopener" href="${esc(lk(b))}">${esc(b.btn)}</a>`:''}</div>`
         :b.link?`<a class="bn-l" target="_blank" rel="noopener" href="${esc(lk(b))}" aria-label="${esc(b.title||'Abrir banner')}"></a>`:''}
     </div>`}).join('')}</div>
@@ -101,9 +101,9 @@ function banner(){
   </div>`;
   IMG.hydrate(el);go(BN.i);auto();
   const v=$('bnv');
-  let x0=null;
-  v.addEventListener('pointerdown',e=>{x0=e.clientX});
-  v.addEventListener('pointerup',e=>{if(x0!==null&&Math.abs(e.clientX-x0)>40){go(BN.i+(e.clientX<x0?1:-1));auto()}x0=null});
+  let x0=null,mv=0;v.addEventListener('click',e=>{if(mv){e.preventDefault();e.stopPropagation();mv=0}},true);
+  v.addEventListener('pointerdown',e=>{x0=e.clientX;mv=0});
+  v.addEventListener('pointerup',e=>{if(x0!==null&&Math.abs(e.clientX-x0)>40){mv=1;go(BN.i+(e.clientX<x0?1:-1));auto()}x0=null});
   v.addEventListener('mouseenter',stop);v.addEventListener('mouseleave',auto);
   v.addEventListener('keydown',e=>{
     if(e.key==='ArrowLeft'){go(BN.i-1);auto();e.preventDefault()}
@@ -134,8 +134,8 @@ function drawP(){
     .slice(0,4);
   $('pmb').innerHTML=`<button class="q x" data-a="close" aria-label="Fechar">${ic('x',18)}</button>
   <div class="col">
-    <div class="pm-main sk">${IMG.html(im[PM.i],{s:'full',alt:p.title,eager:1})}</div>
-    ${im.length>1?`<div class="row wrap">${im.map((r,i)=>`<button class="pm-th${i===PM.i?' on':''}" data-a="pimg" data-v="${i}" aria-label="Foto ${i+1}">${IMG.html(r,{s:'thumb'})}</button>`).join('')}</div>`:''}
+    <div class="pm-main sk">${IMG.html(im[PM.i],{s:'full',alt:p.title,eager:1,now:1})}</div>
+    ${im.length>1?`<div class="row wrap">${im.map((r,i)=>`<button class="pm-th${i===PM.i?' on':''}" data-a="pimg" data-v="${i}" aria-label="Foto ${i+1}">${IMG.html(r,{s:'thumb',now:1})}</button>`).join('')}</div>`:''}
   </div>
   <div class="col" style="gap:10px">
     <p class="kick tg">${esc(p.category)}</p>
@@ -161,7 +161,7 @@ function cartUI(){
   $('cb').classList.toggle('hid',!n);
   $('sub').textContent=money(total(L));
   $('ci').innerHTML=L.length?L.map(({p,qty})=>`<div class="ci sf br">
-    <span class="ci-i sk">${IMG.html(p.images[0],{s:'thumb',alt:p.title})}</span>
+    <span class="ci-i sk">${IMG.html(p.images[0],{s:'thumb',alt:p.title,now:1})}</span>
     <div class="grow">
       <div class="serif">${esc(p.title)}</div>
       <div class="tg">${money(pr(p))}</div>
@@ -191,8 +191,8 @@ const cartSave=()=>{Store.set(KEY.cart,DB.cart);cartUI()};
 ACT.cat=c=>{S.cat=c;S.n=0;Prefs.set({cat:c});chips();grid();$('colecao').scrollIntoView({behavior:'smooth'})};
 ACT.more=()=>{S.n=(S.n||DB.set.page)+DB.set.page;grid()};
 ACT.rl=v=>{const[i,d]=v.split(':'),e=$('rl-'+i);if(e)e.scrollBy({left:d*e.clientWidth*.9,behavior:'smooth'})};
-ACT.open=id=>{const p=DB.prod.find(x=>x.id==id);if(!p)return;PM.p=p;PM.i=0;drawP();modal('pm',1)};
-ACT.pimg=i=>{PM.i=+i;drawP()};
+ACT.open=id=>{const p=DB.prod.find(x=>x.id==id);if(!p)return;PM.p=p;PM.i=0;drawP();modal('pm',1);$('pmb').scrollTop=0};
+ACT.pimg=i=>{const m=$('pmb'),t=m.scrollTop;PM.i=+i;drawP();m.scrollTop=t};
 ACT.add=id=>{
   const p=DB.prod.find(x=>x.id==id);
   if(!p||p.available===false){toast('Peça indisponível no momento.');return}
@@ -204,7 +204,7 @@ ACT.chg=v=>{const[i,d]=v.split(':'),c=DB.cart.find(x=>x.id==i);if(!c)return;c.qt
 ACT.rm=i=>{DB.cart=DB.cart.filter(x=>x.id!=i);cartSave()};
 ACT.clr=()=>{DB.cart=[];cartSave()};
 ACT.cart=()=>drawer(1);
-ACT.close=()=>{drawer(0);modal('lg',0);modal('pm',0)};
+ACT.close=()=>{drawer(0);modal('lg',0);modal('pm',0);if(/^#p=/.test(location.hash))history.replaceState(null,'',location.pathname+location.search)};
 ACT.share=async id=>{
   const p=DB.prod.find(x=>x.id==id);if(!p)return;
   const url=location.origin+location.pathname+'#p='+p.id;

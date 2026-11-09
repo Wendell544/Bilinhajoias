@@ -29,7 +29,7 @@ const UP='<div class="pg hid" id="pgp"><i></i></div><p class="sm tm" id="pgt" ro
 const shell=()=>{
   $('adm').innerHTML=`<div class="w adin">
     <div class="row sp"><h2 class="serif h2">Painel</h2><div class="row"><button class="b ghost" data-a="bk" aria-label="Backup">Backup</button><button class="b ghost" data-a="exit">Sair</button></div></div>
-    <nav class="chips tabs" id="tabs" style="padding:0">${TABS.map((t,i)=>`<button class="chip b" data-a="tab" data-v="${i}">${t}</button>`).join('')}</nav>
+    <nav class="chips tabs" id="tabs">${TABS.map((t,i)=>`<button class="chip b" data-a="tab" data-v="${i}">${t}</button>`).join('')}</nav>
     <div id="ab" class="col" style="gap:16px"></div>
   </div>`
 };
@@ -301,7 +301,13 @@ ACT.mdel=v=>{
     save(k);render();show(A.tab);IMG.gc();toast('Excluído.')
   }else{A.del=key;show(A.tab)}
 };
-ACT.msearch=(v,el)=>{A['q_'+v]=el.value;show(A.tab)};
+ACT.msearch=(v,el,e)=>{
+  if(e||!el||el.tagName!=='INPUT')return;
+  A['q_'+v]=el.value;const p=el.selectionStart,f=MG[v].f.map(([k])=>[k,$('mf-'+k).value]),on=$('mf-on').checked;
+  show(A.tab);
+  f.forEach(([k,x])=>$('mf-'+k).value=x);$('mf-on').checked=on;
+  const n=document.querySelector('[data-a=msearch]');n.focus();n.setSelectionRange(p,p)
+};
 ACT.sset=()=>{
   const s=DB.set,v=k=>$('sf-'+k).value.trim(),n=(k,a,b)=>clamp(v(k),a,b),w=v('wa').replace(/\D/g,''),ig=v('ig').replace(/^@/,'');
   if(w&&(w.length<10||w.length>15)){toast('WhatsApp inválido. Use só números, com 55 + DDD.');return}

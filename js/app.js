@@ -6,6 +6,7 @@ document.addEventListener('click',e=>{
 });
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape')ACT.close();
+  if((e.key==='Enter'||e.key===' ')&&e.target.getAttribute&&e.target.getAttribute('role')==='button'&&e.target.dataset.a){e.preventDefault();e.target.click()}
   if(e.key==='Enter'&&e.target.id==='pw')ACT.login();
   if(A.ok && (e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='s'){
     if(A.tab===0){e.preventDefault();if($('pf-title'))saveP()}
@@ -15,7 +16,8 @@ document.addEventListener('keydown',e=>{
 document.addEventListener('input',e=>{
   const id=e.target.id||'';
   if(id==='fq'){A.fq=e.target.value;A.pl=20;plist()}
-  else if(A.ok&&A.tab===0&&id.startsWith('pf-'))drs()
+  else if(A.ok&&A.tab===0&&id.startsWith('pf-'))drs();
+  else if(e.target.dataset&&e.target.dataset.a==='msearch')ACT.msearch(e.target.dataset.v,e.target)
 });
 document.addEventListener('change',e=>{
   const t=e.target;
