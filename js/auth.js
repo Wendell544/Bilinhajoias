@@ -2,7 +2,8 @@
 const Auth=(()=>{
   const SALT=['bj','2','ouro'].join('|'),IT=210000;
   const hp=['8209b2bc78f7374b','1252d72e83312f91','c08aca8ea081f455','ddea67131f5eebf2'];
-  const HASH=[hp[1],hp[3],hp[0],hp[2]].join('');
+  const FIXED='';
+  const HASH=FIXED||[hp[1],hp[3],hp[0],hp[2]].join('');
   const kdf=async pw=>{
     const e=new TextEncoder();
     const k=await crypto.subtle.importKey('raw',e.encode(pw),'PBKDF2',false,['deriveBits']);
@@ -21,7 +22,7 @@ const Auth=(()=>{
   }
   async function change(pw){
     if(pw.length<8)return false;
-    try{return Store.set(KEY.pw,await kdf(pw))}catch(e){return false}
+    try{const h=await kdf(pw);if(!Store.set(KEY.pw,h)||Store.get(KEY.pw)!==h)return false;Store.del(KEY.lock);try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}return h}catch(e){return false}
   }
   return{login,change};
 })();

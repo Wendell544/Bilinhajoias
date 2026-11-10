@@ -22,6 +22,7 @@ function load(){
   if(!Array.isArray(DB.prod)){DB.prod=seed();d=true}
   DB.prod=DB.prod.filter(okP).map(p=>{
     if(!Array.isArray(p.images)){p.images=p.imageUrl?[p.imageUrl]:[];d=true}
+    p.images=p.images.map(r=>{if(r&&r.l){d=true;return{k:r.k}}return r});
     if(p.available===undefined)p.available=true;
     return p
   });

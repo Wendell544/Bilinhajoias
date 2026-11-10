@@ -22,7 +22,7 @@ const card=p=>{
   const isNew=typeof p.id==='number'&&p.id>1e12&&(Date.now()-p.id<30*864e5);
   return`<article class="cd${un?' un':''}">
     <div class="cd-i sk" data-a="open" data-v="${p.id}" role="button" tabindex="0" aria-label="Ver ${esc(p.title)}">
-      ${IMG.html(p.images[0],{alt:p.title})}
+      ${IMG.html(p.images[0],{alt:p.title,s:'card'})}
       ${off?`<span class="tag gold">${Math.round((1-v/p.price)*100)}% off</span>`:''}
       ${un?'<span class="tag un">Indisponível</span>':''}
       ${isNew&&!off?'<span class="tag new">Novo</span>':''}
@@ -48,7 +48,7 @@ function rails(){
   const s=DB.set.show,P=DB.prod,o=[];
   if(s.cats){
     const c=DB.cats.filter(x=>x.on);
-    if(c.length>1)o.push(sec('cats','Compre por categoria',c.map(x=>`<button class="ct" data-a="cat" data-v="${esc(x.name)}"><span class="ct-i sk">${IMG.html(x.img,{alt:x.name})}</span><span class="serif">${esc(x.name)}</span></button>`).join(''),' rl-cats'))
+    if(c.length>1)o.push(sec('cats','Compre por categoria',c.map(x=>`<button class="ct" data-a="cat" data-v="${esc(x.name)}"><span class="ct-i sk">${IMG.html(x.img,{alt:x.name,s:'card'})}</span><span class="serif">${esc(x.name)}</span></button>`).join(''),' rl-cats'))
   }
   const a=DB.ads.filter(x=>x.on);
   if(s.ads&&a.length)o.push(sec('ads','Novidades e ofertas',a.map(adCard).join(''),' rl-ads'));
@@ -134,7 +134,7 @@ function drawP(){
     .slice(0,4);
   $('pmb').innerHTML=`<button class="q x" data-a="close" aria-label="Fechar">${ic('x',18)}</button>
   <div class="col">
-    <div class="pm-main sk">${IMG.html(im[PM.i],{s:'full',alt:p.title,eager:1,now:1})}</div>
+    <div class="pm-main sk">${IMG.html(im[PM.i],{s:'mid',alt:p.title,eager:1,now:1})}</div>
     ${im.length>1?`<div class="row wrap">${im.map((r,i)=>`<button class="pm-th${i===PM.i?' on':''}" data-a="pimg" data-v="${i}" aria-label="Foto ${i+1}">${IMG.html(r,{s:'thumb',now:1})}</button>`).join('')}</div>`:''}
   </div>
   <div class="col" style="gap:10px">

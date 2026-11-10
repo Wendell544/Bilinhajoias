@@ -211,3 +211,14 @@ svg *{vector-effect:non-scaling-stroke}
 .ci .row{flex-wrap:wrap;gap:6px}
 .ci .q{width:40px;height:40px}
 .adin .chips.tabs{top:env(safe-area-inset-top,0px);box-shadow:0 calc(-1*env(safe-area-inset-top,0px)) 0 var(--bg)}
+
+/* v4: painel firme, sem zoom, leve com muitas fotos */
+html{scrollbar-gutter:stable}
+html.al{overflow:hidden}
+button,a,input,select,textarea,label{touch-action:manipulation}
+.adm{overscroll-behavior:contain;overflow-x:hidden}
+.adm img,.adm .sk{transition:none;animation:none}
+img[data-k]:not(.ok){transform:none}
+.gr>.cd{content-visibility:auto;contain-intrinsic-size:auto 400px}
+.pm-main img{max-height:min(62vh,600px)}
+@media(max-width:767px){.md.pm{padding:0}.md.pm>div{max-width:none;height:100%;max-height:none;border-radius:0;border:0;padding:16px}}

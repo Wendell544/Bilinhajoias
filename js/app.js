@@ -39,3 +39,4 @@ S.cat=pf.cat||'Todos';S.srt=pf.srt||'feat';$('so').value=S.srt;
 document.querySelectorAll('[data-i]').forEach(e=>e.innerHTML=ic(e.dataset.i,+e.dataset.s||20));
 render();
 setTimeout(openFromHash,60);
+try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}

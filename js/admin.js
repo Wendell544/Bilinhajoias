@@ -207,7 +207,7 @@ function tSet(){
 const tPw=()=>`<section class="sf br box"><h3 class="serif h3">Alterar senha</h3>
   <p class="sm tm">A nova senha vale neste aparelho. Use 8 caracteres ou mais, com letras, números e símbolos.</p>
   <input class="in" id="np" type="password" autocomplete="new-password" placeholder="Nova senha">
-  <div class="row"><button class="b gold" data-a="spw">Salvar senha</button></div>
+  <div class="row"><button class="b gold" data-a="spw">Salvar senha</button></div><div id="pwo" class="col"></div>
 </section>`;
 
 const mv=(v,d)=>{const[k,id]=v.split(':'),L=DB[k],i=L.findIndex(x=>x.id==id),j=i+d;if(i<0||j<0||j>=L.length)return;[L[i],L[j]]=[L[j],L[i]];save(k);render();show(A.tab)};
@@ -332,7 +332,7 @@ ACT.sset=()=>{
 ACT.spw=async()=>{
   const v=$('np').value;
   if(v.length<8){toast('Use 8 caracteres ou mais.');return}
-  if(await Auth.change(v)){$('np').value='';toast('Senha alterada neste aparelho.')}
+  const h=await Auth.change(v);if(h){$('np').value='';toast('Senha alterada neste aparelho.');$('pwo').innerHTML='<p class="sm tm">Para a senha valer em todos os aparelhos e nunca voltar à antiga, cole o código abaixo em <b>js/auth.js</b>, na linha <b>const FIXED=\'\'</b>, entre as aspas.</p><textarea class="in" readonly rows="3">'+h+'</textarea>'}
   else toast('Não foi possível alterar a senha.')
 };
 ACT.bk=()=>{

@@ -26,7 +26,7 @@ const clamp=(n,a,b)=>Math.min(b,Math.max(a,+n||0));
 const debounce=(fn,ms=300)=>{let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms)}};
 
 const toast=t=>{const e=$('ts');if(!e)return;e.textContent=t;e.classList.remove('hid');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.add('hid'),2800)};
-const lock=()=>{document.body.style.overflow=['lg','pm','adm'].some(i=>!$(i).classList.contains('hid'))||$('drw').classList.contains('on')?'hidden':''};
+const lock=()=>{document.documentElement.classList.toggle('al',['lg','pm','adm'].some(i=>!$(i).classList.contains('hid'))||$('drw').classList.contains('on'))};
 const modal=(id,on)=>{$(id).classList.toggle('hid',!on);lock();if(on&&id==='lg')setTimeout(()=>$('pw').focus(),50)};
 const drawer=on=>{$('drw').classList.toggle('on',!!on);$('ov').classList.toggle('hid',!on);lock()};
 
