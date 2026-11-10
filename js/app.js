@@ -25,7 +25,7 @@ document.addEventListener('change',e=>{
   else if(t.id==='mf-file'){upM([...t.files]);t.value=''}
 });
 let qt;
-const onQ=e=>{S.q=e.target.value;document.querySelectorAll('.qi').forEach(o=>{if(o!==e.target)o.value=S.q});clearTimeout(qt);qt=setTimeout(()=>{S.n=0;grid()},160)};
+const onQ=e=>{S.q=e.target.value;document.querySelectorAll('.qi').forEach(o=>{if(o!==e.target)o.value=S.q});clearTimeout(qt);qt=setTimeout(()=>{S.n=0;grid();if(e.target.id==='qh'&&S.q.trim()){const r=$('colecao').getBoundingClientRect();if(r.top>innerHeight*.5||r.bottom<0)$('colecao').scrollIntoView({behavior:'smooth'})}},160)};
 document.querySelectorAll('.qi').forEach(i=>i.addEventListener('input',onQ));
 $('so').addEventListener('change',()=>{S.srt=$('so').value;S.n=0;Prefs.set({srt:S.srt});grid()});
 document.addEventListener('visibilitychange',()=>document.hidden?stop():auto());

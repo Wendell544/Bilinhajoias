@@ -48,10 +48,10 @@ function rails(){
   const s=DB.set.show,P=DB.prod,o=[];
   if(s.cats){
     const c=DB.cats.filter(x=>x.on);
-    if(c.length>1)o.push(sec('cats','Compre por categoria',c.map(x=>`<button class="ct" data-a="cat" data-v="${esc(x.name)}"><span class="ct-i sk">${IMG.html(x.img,{alt:x.name})}</span><span class="serif">${esc(x.name)}</span></button>`).join('')))
+    if(c.length>1)o.push(sec('cats','Compre por categoria',c.map(x=>`<button class="ct" data-a="cat" data-v="${esc(x.name)}"><span class="ct-i sk">${IMG.html(x.img,{alt:x.name})}</span><span class="serif">${esc(x.name)}</span></button>`).join(''),' rl-cats'))
   }
   const a=DB.ads.filter(x=>x.on);
-  if(s.ads&&a.length)o.push(sec('ads','Novidades e ofertas',a.map(adCard).join(''),' ad'));
+  if(s.ads&&a.length)o.push(sec('ads','Novidades e ofertas',a.map(adCard).join(''),' rl-ads'));
   if(s.feat){
     const l=P.filter(p=>p.featured).slice(0,12);
     if(l.length)o.push(sec('feat','Produtos em destaque',l.map(card).join('')))
@@ -203,7 +203,7 @@ ACT.add=id=>{
 ACT.chg=v=>{const[i,d]=v.split(':'),c=DB.cart.find(x=>x.id==i);if(!c)return;c.qty=Math.min(99,c.qty+ +d);if(c.qty<1)DB.cart=DB.cart.filter(x=>x!==c);cartSave()};
 ACT.rm=i=>{DB.cart=DB.cart.filter(x=>x.id!=i);cartSave()};
 ACT.clr=()=>{DB.cart=[];cartSave()};
-ACT.cart=()=>drawer(1);
+ACT.cart=()=>{$('ts').classList.add('hid');drawer(1)};
 ACT.close=()=>{drawer(0);modal('lg',0);modal('pm',0);if(/^#p=/.test(location.hash))history.replaceState(null,'',location.pathname+location.search)};
 ACT.share=async id=>{
   const p=DB.prod.find(x=>x.id==id);if(!p)return;
