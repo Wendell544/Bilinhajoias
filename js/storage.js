@@ -10,7 +10,7 @@ const DB={prod:[],cart:[],ban:[],ads:[],cats:[],set:{}};
 const okP=p=>p&&typeof p.title==='string'&&p.title.trim()&&p.price>=0&&typeof p.category==='string';
 const wa=t=>'https://wa.me/'+(DB.set.wa||WAD)+'?text='+encodeURIComponent(t);
 const lk=o=>okUrl(o.link)?o.link:wa('Olá! Vi “'+(o.title||'o anúncio')+'” no site e gostaria de saber mais.');
-const save=k=>Store.set(KEY[k],DB[k]);
+const save=k=>{const ok=Store.set(KEY[k],DB[k]);if(ok&&k!=='cart'&&typeof A!=='undefined'&&A.ok)Store.set(KEY.chg,Date.now());return ok};
 const saveAll=()=>{['prod','cart','ban','ads','cats','set'].forEach(save);Store.set(KEY.meta,{v:V,at:Date.now()})};
 
 function load(){
@@ -40,6 +40,24 @@ function load(){
 }
 const Prefs={get:()=>Store.get(KEY.pref,{}),set:o=>Store.set(KEY.pref,{...Prefs.get(),...o})};
 const Draft={get:()=>Store.get(KEY.draft),set:v=>Store.set(KEY.draft,v),clear:()=>Store.del(KEY.draft)};
+const Log={get:()=>Store.get(KEY.log,[]),add(m){const l=Log.get();l.unshift({t:Date.now(),m:String(m).slice(0,160)});Store.set(KEY.log,l.slice(0,20))}};
+/* Catálogo publicado (data/catalog.json): é o que os clientes veem em qualquer aparelho */
+async function loadRemote(ms=4000){
+  try{
+    const c=new AbortController(),t=setTimeout(()=>c.abort(),ms),r=await fetch('data/catalog.json',{cache:'no-cache',signal:c.signal});
+    clearTimeout(t);
+    if(!r.ok)return false;
+    const d=await r.json();
+    if(!d||!Array.isArray(d.prod))return false;
+    DB.prod=d.prod.filter(okP).map(p=>({...p,images:Array.isArray(p.images)?p.images:[],available:p.available!==false}));
+    if(Array.isArray(d.ban))DB.ban=d.ban;
+    if(Array.isArray(d.ads))DB.ads=d.ads;
+    if(Array.isArray(d.cats))DB.cats=d.cats;
+    if(d.set&&typeof d.set==='object'){DB.set={...SET0,...d.set};DB.set.show={...SET0.show,...(d.set.show||{})}}
+    DB.cart=DB.cart.filter(x=>x&&x.qty>0&&DB.prod.some(p=>p.id===x.id));
+    return true
+  }catch(e){return false}
+}
 
 /* Histórico de "interesse" (proxy de popularidade): +1 ao adicionar à sacola */
 const Hist={

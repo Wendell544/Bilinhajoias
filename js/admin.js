@@ -28,18 +28,29 @@ const F=(id,l,x='',c='')=>`<label class="lb ${c}">${l}<input class="in" id="${id
 const UP='<div class="pg hid" id="pgp"><i></i></div><p class="sm tm" id="pgt" role="status"></p>';
 const shell=()=>{
   $('adm').innerHTML=`<div class="w adin">
-    <div class="row sp"><h2 class="serif h2">Painel</h2><div class="row"><button class="b ghost" data-a="bk" aria-label="Backup">Backup</button><button class="b ghost" data-a="exit">Sair</button></div></div>
+    <div class="row sp wrap"><h2 class="serif h2">Painel</h2><div class="row wrap"><button class="b gold" data-a="pub">Publicar no site</button><button class="b ghost" data-a="bk" aria-label="Backup">Backup</button><button class="b ghost" data-a="exit">Sair</button></div></div>
+    <p class="sm tm" id="pst" role="status"></p>
     <nav class="chips tabs" id="tabs">${TABS.map((t,i)=>`<button class="chip b" data-a="tab" data-v="${i}">${t}</button>`).join('')}</nav>
     <div id="ab" class="col" style="gap:16px"></div>
   </div>`
 };
+const tabsNav=()=>{
+  const t=$('tabs');
+  t.addEventListener('wheel',e=>{if(t.scrollWidth>t.clientWidth&&Math.abs(e.deltaY)>Math.abs(e.deltaX)){t.scrollLeft+=e.deltaY;e.preventDefault()}},{passive:false});
+  t.addEventListener('keydown',e=>{
+    const b=[...t.children],i=b.indexOf(document.activeElement),d=e.key==='ArrowRight'?1:e.key==='ArrowLeft'?-1:0;
+    if(d&&i>=0){b[(i+d+b.length)%b.length].focus();e.preventDefault()}
+  })
+};
 const enter=()=>{
+  if(!Store.get(KEY.adm)){saveAll();Store.set(KEY.adm,1)}
   A.ok=true;A.lastAct=Date.now();
-  modal('lg',0);if(!$('tabs'))shell();modal('adm',1);show(A.tab)
+  modal('lg',0);if(!$('tabs')){shell();tabsNav()}modal('adm',1);show(A.tab)
 };
 function show(n){
   A.tab=+n;
   document.querySelectorAll('#tabs .chip').forEach((b,i)=>b.classList.toggle('on',i===A.tab));
+  const on=document.querySelector('#tabs .chip.on');if(on&&on.scrollIntoView)on.scrollIntoView({inline:'center',block:'nearest'});pst();
   const k=MK[A.tab];if(k&&(!A.m||A.m.k!==k))A.m={k,id:null,img:null};
   $('ab').innerHTML=[tProd,()=>tMgr('ban'),()=>tMgr('cats'),()=>tMgr('ads'),tSet,tPw][A.tab]();
   if(A.tab===0){phs();plist()}
@@ -57,7 +68,8 @@ function tProd(){
     ['Produtos',P.length],
     ['Valor em estoque',money(tot)],
     ['Categoria líder',top?top[0]:'—'],
-    ['Em destaque',P.filter(p=>p.featured).length]
+    ['Em destaque',P.filter(p=>p.featured).length],
+    ['Fotos',P.reduce((n,p)=>n+p.images.length,0)]
   ].map(([k,v])=>`<div class="sf br card2"><div class="sm tm">${k}</div><div class="serif tg h3">${esc(v)}</div></div>`).join('')}</div>
   ${Draft.get()&&!A.edit?`<div class="sf br note"><span>Há um rascunho de produto não publicado.</span><div class="row"><button class="b gold" data-a="drec">Recuperar</button><button class="b ghost" data-a="ddis">Descartar</button></div></div>`:''}
   <section class="sf br box"><h3 class="serif h3" id="pft">${A.edit?'Editar produto':'Cadastrar produto'}</h3>
@@ -125,7 +137,15 @@ function drsNow(){
 }
 const drs=debounce(drsNow,400);
 
+let upBusy=false;
 async function upRun(files){
+  if(upBusy){toast('Aguarde o envio atual terminar.');return{refs:[],errs:[],dups:0}}
+  upBusy=true;
+  try{const r=await upRun0(files);r.errs.forEach(m=>Log.add('Upload: '+m));return r}
+  catch(e){Log.add('Upload: '+(e.message||e));toast('Falha no envio. Tente novamente.');return{refs:[],errs:[String(e.message||e)],dups:0}}
+  finally{upBusy=false}
+}
+async function upRun0(files){
   const p=$('pgp'),b=p.firstElementChild;p.classList.remove('hid');b.style.width='5%';
   const r=await IMG.upload(files,(n,t)=>{b.style.width=Math.round(n/t*100)+'%';$('pgt').textContent='Processando '+n+' de '+t+'…'});
   setTimeout(()=>p.classList.add('hid'),600);
@@ -200,7 +220,7 @@ function tSet(){
     <h4 class="serif h3">Seções da loja</h4>
     <div class="row wrap" style="gap:4px 16px">${SH.map(([k,l])=>`<label class="chk"><input type="checkbox" id="ss-${k}"${s.show[k]?' checked':''}>${l}</label>`).join('')}</div>
     <div class="row"><button class="b gold" data-a="sset">Salvar</button></div>
-    <p class="sm tm" id="stq"></p>
+    <p class="sm tm" id="stq"></p>${errLog()}
   </section>`
 }
 
@@ -334,6 +354,58 @@ ACT.spw=async()=>{
   if(v.length<8){toast('Use 8 caracteres ou mais.');return}
   const h=await Auth.change(v);if(h){$('np').value='';toast('Senha alterada neste aparelho.');$('pwo').innerHTML='<p class="sm tm">Para a senha valer em todos os aparelhos e nunca voltar à antiga, cole o código abaixo em <b>js/auth.js</b>, na linha <b>const FIXED=\'\'</b>, entre as aspas.</p><textarea class="in" readonly rows="3">'+h+'</textarea>'}
   else toast('Não foi possível alterar a senha.')
+};
+const pst=()=>{
+  const e=$('pst');if(!e)return;
+  const c=Store.get(KEY.chg,0),p=Store.get(KEY.pub,0);
+  e.textContent=!p?'Nenhum pacote gerado neste aparelho. Os clientes só veem alterações depois de “Publicar no site”.':c>p?'Há alterações fora do último pacote. Toque em “Publicar no site”.':'Último pacote gerado em '+new Date(p).toLocaleString('pt-BR')+'. Envie-o à hospedagem para os clientes verem.'
+};
+const errLog=()=>{const l=Log.get().slice(0,6);return`<details class="sm tm"><summary>Erros recentes (${l.length})</summary>${l.map(x=>`<p>${new Date(x.t).toLocaleString('pt-BR')} · ${esc(x.m)}</p>`).join('')||'<p>Nenhum erro registrado.</p>'}</details>`};
+/* ZIP sem compressão (as fotos já estão em WebP): data/catalog.json + img/ */
+const crcT=(()=>{const t=[];for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+const crc32=u=>{let c=-1;for(let i=0;i<u.length;i++)c=crcT[(c^u[i])&255]^(c>>>8);return(c^-1)>>>0};
+function zip(files){
+  const E=new TextEncoder(),P=[],C=[];let o=0;
+  const w=(a,v,l)=>{for(let i=0;i<l;i++)a.push((v>>>(8*i))&255)};
+  files.forEach(f=>{
+    const n=E.encode(f.n),c=crc32(f.d),z=f.d.length,h=[],g=[];
+    [[0x04034b50,4],[20,2],[0x0800,2],[0,2],[0,2],[0x21,2],[c,4],[z,4],[z,4],[n.length,2],[0,2]].forEach(x=>w(h,x[0],x[1]));
+    [[0x02014b50,4],[20,2],[20,2],[0x0800,2],[0,2],[0,2],[0x21,2],[c,4],[z,4],[z,4],[n.length,2],[0,2],[0,2],[0,2],[0,2],[0,4],[o,4]].forEach(x=>w(g,x[0],x[1]));
+    P.push(new Uint8Array(h),n,f.d);C.push(new Uint8Array(g),n);o+=h.length+n.length+z
+  });
+  const cs=C.reduce((a,x)=>a+x.length,0),e=[];
+  [[0x06054b50,4],[0,2],[0,2],[files.length,2],[files.length,2],[cs,4],[o,4],[0,2]].forEach(x=>w(e,x[0],x[1]));
+  return new Blob([...P,...C,new Uint8Array(e)],{type:'application/zip'})
+}
+ACT.pub=async()=>{
+  const btn=document.querySelector('[data-a=pub]');if(!btn||btn.disabled)return;
+  const t0=btn.textContent;btn.disabled=true;btn.textContent='Preparando…';
+  try{
+    const keys=new Set(),scan=r=>{r=R(r);if(r&&r.k)keys.add(r.k)};
+    DB.prod.forEach(p=>p.images.forEach(scan));[...DB.ban,...DB.ads,...DB.cats].forEach(x=>scan(x.img));
+    const ext=new Map(),FL=[],miss=[];
+    for(const k of keys){
+      const r=await IMG.get(k);
+      if(!r||!r.full){miss.push(k);continue}
+      const e=r.full.type==='image/webp'?'webp':'jpg',p='img/'+k.slice(2);ext.set(k,e);
+      for(const[s,sf]of[['full','-f'],['mid','-m'],['card','-c'],['thumb','-t']])FL.push({n:p+sf+'.'+e,d:new Uint8Array(await(r[s]||r.full).arrayBuffer())})
+    }
+    if(miss.length){
+      Log.add('Publicar: '+miss.length+' foto(s) ausentes neste navegador');
+      if(!confirm(miss.length+' foto(s) não estão neste navegador e ficarão de fora do pacote. Continuar mesmo assim?'))return
+    }
+    const cv=r=>{r=R(r);if(!r)return null;if(!r.k)return r;return ext.has(r.k)?{p:'img/'+r.k.slice(2),e:ext.get(r.k)}:null};
+    const d=JSON.parse(JSON.stringify({v:V,at:Date.now(),prod:DB.prod,ban:DB.ban,ads:DB.ads,cats:DB.cats,set:DB.set}));
+    d.prod.forEach(p=>{p.images=p.images.map(cv).filter(Boolean)});
+    [...d.ban,...d.ads,...d.cats].forEach(x=>{x.img=cv(x.img)});
+    FL.unshift({n:'data/catalog.json',d:new TextEncoder().encode(JSON.stringify(d))});
+    const a=document.createElement('a');a.href=URL.createObjectURL(zip(FL));
+    a.download='publicar-bilinha-'+new Date().toISOString().slice(0,10)+'.zip';
+    document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),8000);
+    Store.set(KEY.pub,Date.now());pst();
+    alert('Pacote gerado com '+keys.size+' foto(s).\n\n1) Descompacte o ZIP.\n2) Copie as pastas “data” e “img” para a pasta do site, ao lado do index.html (substitua os arquivos, sem apagar nada).\n3) Envie tudo para a hospedagem.\n\nDepois disso, todos os aparelhos passam a ver os mesmos produtos e fotos.')
+  }catch(e){Log.add('Publicar: '+(e.message||e));toast('Não foi possível gerar o pacote.')}
+  finally{btn.disabled=false;btn.textContent=t0}
 };
 ACT.bk=()=>{
   const r=confirm('OK = Baixar backup. Cancelar = Restaurar de um arquivo.');

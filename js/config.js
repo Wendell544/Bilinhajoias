@@ -2,7 +2,7 @@
 const V=2,PFX='bilinha_joias_',KEY={
   prod:PFX+'products',cart:PFX+'cart',ban:PFX+'banners',ads:PFX+'ads',cats:PFX+'cats',
   set:PFX+'settings',meta:PFX+'meta',pref:PFX+'prefs',draft:PFX+'draft',pw:PFX+'k2',
-  lock:PFX+'lock',oban:PFX+'banner',hist:PFX+'hist'
+  lock:PFX+'lock',oban:PFX+'banner',hist:PFX+'hist',adm:PFX+'adm',chg:PFX+'chg',pub:PFX+'pub',log:PFX+'log'
 };
 const WAD=['5583','9990','74027'].join('');
 const CATS0=['Pratas','Relógios','Alianças','Colares','Óculos','Combos'];

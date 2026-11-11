@@ -222,3 +222,16 @@ img[data-k]:not(.ok){transform:none}
 .gr>.cd{content-visibility:auto;contain-intrinsic-size:auto 400px}
 .pm-main img{max-height:min(62vh,600px)}
 @media(max-width:767px){.md.pm{padding:0}.md.pm>div{max-width:none;height:100%;max-height:none;border-radius:0;border:0;padding:16px}}
+
+/* v5: abas do painel rolam (margin:auto no item flex fazia a barra ficar do tamanho do conteúdo), galeria com setas/zoom */
+.adin .chips.tabs{margin:0 0 8px;width:100%;max-width:100%;min-width:0;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:thin}
+.adin .chips.tabs::-webkit-scrollbar{display:block;height:6px}
+.adin .chips.tabs::-webkit-scrollbar-thumb{background:var(--bd);border-radius:3px}
+@media(min-width:768px){.adin .chips.tabs{flex-wrap:wrap;overflow:visible}}
+.mt{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.pm-main{position:relative;cursor:zoom-in;touch-action:pan-y}
+.pm-a{position:absolute;top:50%;transform:translateY(-50%);width:40px;height:40px;background:rgba(9,9,11,.55);color:#f5f1e6;border-color:rgba(255,255,255,.25)}
+.pm-a.pv{left:8px}.pm-a.nx{right:8px}
+.pm-c{position:absolute;right:8px;bottom:8px;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;background:rgba(9,9,11,.7);color:#f5f1e6}
+.pm-main.zm{position:fixed;inset:0;z-index:80;min-height:0;border:0;border-radius:0;background:#000;cursor:zoom-out}
+.pm-main.zm img{width:100%;height:100%;max-height:none;object-fit:contain}

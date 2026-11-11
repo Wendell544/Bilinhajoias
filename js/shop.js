@@ -1,5 +1,5 @@
 /* Loja pública: filtros, banner em carrossel, carrosséis de produtos, página do produto e sacola */
-const S={cat:'Todos',q:'',srt:'feat',n:0},BN={i:0,n:0,t:null,p:false},PM={p:null,i:0};
+const S={cat:'Todos',q:'',srt:'feat',n:0},BN={i:0,n:0,t:null,p:false},PM={p:null,i:0,z:false};let swp=0;
 const pr=p=>p.promo>0&&p.promo<p.price?+p.promo:+p.price;
 const inst=p=>{const m=/^\s*(\d+)\s*x\s*(.*)$/i.exec(p.installment||'');return m&&+m[1]>1?(m[1]+'x de '+money(pr(p)/m[1])+' '+m[2]).trim():(p.installment||'')};
 const lines=()=>DB.cart.map(c=>({p:DB.prod.find(p=>p.id===c.id),qty:c.qty})).filter(l=>l.p);
@@ -134,7 +134,7 @@ function drawP(){
     .slice(0,4);
   $('pmb').innerHTML=`<button class="q x" data-a="close" aria-label="Fechar">${ic('x',18)}</button>
   <div class="col">
-    <div class="pm-main sk">${IMG.html(im[PM.i],{s:'mid',alt:p.title,eager:1,now:1})}</div>
+    <div class="pm-main sk${PM.z?' zm':''}" data-a="pz" role="button" tabindex="0" aria-label="${PM.z?'Fechar ampliação':'Ampliar foto'}">${IMG.html(im[PM.i],{s:PM.z?'full':'mid',alt:p.title,eager:1,now:1})}${im.length>1?`<button class="q pm-a pv" data-a="pnav" data-v="-1" aria-label="Foto anterior">${ic('prev')}</button><button class="q pm-a nx" data-a="pnav" data-v="1" aria-label="Próxima foto">${ic('next')}</button><span class="pm-c">${PM.i+1}/${im.length}</span>`:''}</div>
     ${im.length>1?`<div class="row wrap">${im.map((r,i)=>`<button class="pm-th${i===PM.i?' on':''}" data-a="pimg" data-v="${i}" aria-label="Foto ${i+1}">${IMG.html(r,{s:'thumb',now:1})}</button>`).join('')}</div>`:''}
   </div>
   <div class="col" style="gap:10px">
@@ -191,8 +191,10 @@ const cartSave=()=>{Store.set(KEY.cart,DB.cart);cartUI()};
 ACT.cat=c=>{S.cat=c;S.n=0;Prefs.set({cat:c});chips();grid();$('colecao').scrollIntoView({behavior:'smooth'})};
 ACT.more=()=>{S.n=(S.n||DB.set.page)+DB.set.page;grid()};
 ACT.rl=v=>{const[i,d]=v.split(':'),e=$('rl-'+i);if(e)e.scrollBy({left:d*e.clientWidth*.9,behavior:'smooth'})};
-ACT.open=id=>{const p=DB.prod.find(x=>x.id==id);if(!p)return;PM.p=p;PM.i=0;drawP();modal('pm',1);$('pmb').scrollTop=0};
+ACT.open=id=>{const p=DB.prod.find(x=>x.id==id);if(!p)return;PM.p=p;PM.i=0;PM.z=false;drawP();modal('pm',1);$('pmb').scrollTop=0};
 ACT.pimg=i=>{const m=$('pmb'),t=m.scrollTop;PM.i=+i;drawP();m.scrollTop=t};
+ACT.pnav=v=>{const n=PM.p.images.length,m=$('pmb'),t=m.scrollTop;PM.i=(PM.i+ +v+n)%n;drawP();m.scrollTop=t};
+ACT.pz=()=>{if(swp){swp=0;return}const m=$('pmb'),t=m.scrollTop;PM.z=!PM.z;drawP();m.scrollTop=t};
 ACT.add=id=>{
   const p=DB.prod.find(x=>x.id==id);
   if(!p||p.available===false){toast('Peça indisponível no momento.');return}

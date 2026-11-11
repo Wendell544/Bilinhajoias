@@ -16,8 +16,8 @@ async function one(f){
   if(!(/^image\/(jpeg|png|webp|heic|heif|avif|gif)$/.test(f.type)||(!f.type&&/\.(jpe?g|png|webp|heic|heif|avif|gif)$/i.test(f.name))))throw new Error(f.name+': formato não permitido (use JPG, PNG ou WebP).');
   const mb=DB.set.mb||8;if(f.size>mb*1048576)throw new Error(f.name+': passa de '+mb+' MB.');
   let s;try{s=await dec(f)}catch(e){throw new Error(f.name+': imagem inválida ou corrompida.')}
-  const full=await enc(s,2000,.84),k='i:'+await hash(full);let r=await get(k);const dup=!!r;
-  if(!r){r={k,full,mid:await enc(s,900,.82),card:await enc(s,480,.78),thumb:await enc(s,240,.76),v:VER,at:Date.now()};await put(r)}
+  const full=await enc(s,2000,.84);if(!full)throw new Error(f.name+': não foi possível processar a imagem.');const k='i:'+await hash(full);let r=await get(k);const dup=!!r;
+  if(!r){r={k,full,mid:await enc(s,900,.82),card:await enc(s,480,.78),thumb:await enc(s,240,.76),v:VER,at:Date.now()};await put(r);const c=await get(k);if(!c||!c.full||!c.thumb||c.full.size!==full.size)throw new Error(f.name+': não foi possível gravar a foto neste navegador (falta de espaço?).')}
   if(s.close)s.close();
   return{ref:{k},dup}
 }
@@ -32,8 +32,10 @@ const ld=i=>{if(i.dataset.l)return;i.dataset.l=1;return url(i.dataset.k,i.datase
 const io='IntersectionObserver'in window?new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){io.unobserve(e.target);e.target.tagName==='IMG'?ld(e.target):e.target.querySelectorAll('img[data-k]').forEach(ld)}}),{rootMargin:'400px'}):null;
 const hydrate=root=>root.querySelectorAll('img[data-k]:not([data-h])').forEach(i=>{i.dataset.h=1;if(i.dataset.n||!io)ld(i);else io.observe(i.closest('.rl')||i)});
 const okSrc=u=>/^(https?:|data:image\/)/i.test(u||'');
+const SUF={thumb:'-t',card:'-c',mid:'-m',full:'-f'};
 const html=(r,o={})=>{
   r=R(r);const a=esc(o.alt||''),eager=o.eager?' fetchpriority="high"':'';
+  if(r&&r.p&&/^img\/[\w-]+$/.test(r.p))return`<img src="${esc(r.p+(SUF[o.s]||'-m')+'.'+(r.e==='jpg'?'jpg':'webp'))}" alt="${a}" decoding="async"${eager}${o.eager?'':' loading="lazy"'}>`;
   if(!r||(!r.k&&!okSrc(r.u)))return`<img src="${art(40)}" alt="${a}" decoding="async">`;
   if(r.k){const s=o.s||'mid',c=URLS.get(r.k+s);return c?`<img src="${esc(c)}" class="ok" data-k="${esc(r.k)}" data-s="${s}" data-h="1" data-l="1" alt="${a}" decoding="async"${eager}>`:`<img src="${r.l?esc(r.l):PX}" data-k="${esc(r.k)}" data-s="${s}"${o.now?' data-n="1"':''} alt="${a}" decoding="async"${eager}>`}
   return`<img src="${esc(r.u)}" alt="${a}" decoding="async"${eager}${o.eager?'':' loading="lazy"'}>`
