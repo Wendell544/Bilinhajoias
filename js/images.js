@@ -4,7 +4,6 @@ const IMG = (() => {
   const MB = 1024 * 1024;
   const UPLOAD_URL = `${SB_URL}/functions/v1/upload-image`;
 
-  /* Cache de URLs públicas por hash (evita recriar <img>) */
   const URLS = new Map();
 
   const dec = (f) =>
@@ -39,14 +38,9 @@ const IMG = (() => {
     return b;
   };
 
-  /* ------------------------------------------------------------------
-     one(file) → { ref: { u, k }, dup }
-     ------------------------------------------------------------------ */
   async function one(f) {
     const mb = DB.set.mb || 8;
-    if (f.size > mb * MB) {
-      throw new Error(`${f.name}: passa de ${mb} MB.`);
-    }
+    if (f.size > mb * MB) throw new Error(`${f.name}: passa de ${mb} MB.`);
     if (!TYPES.includes(f.type) && !/\.(jpe?g|png|webp|heic|heif|gif|avif)$/i.test(f.name)) {
       throw new Error(`${f.name}: formato não permitido (use JPG, PNG ou WebP).`);
     }
@@ -61,18 +55,12 @@ const IMG = (() => {
     const full = await enc(s, 2000, 0.85);
     if (!full) throw new Error(`${f.name}: não foi possível processar a imagem.`);
 
-    /* Hash local (não é o mesmo hash do servidor, mas serve para deduplicar no cliente) */
     const k = 'i:' + (await hash(full));
-    if (URLS.has(k)) {
-      return { ref: { u: URLS.get(k), k }, dup: true };
-    }
+    if (URLS.has(k)) return { ref: { u: URLS.get(k), k }, dup: true };
 
-    /* Enviar para a Edge Function */
     const session = await SB.auth.getSession();
     const token = session.data.session?.access_token;
-    if (!token) {
-      throw new Error('Faça login para enviar imagens.');
-    }
+    if (!token) throw new Error('Faça login para enviar imagens.');
 
     const form = new FormData();
     form.append('file', new File([full], 'upload.webp', { type: 'image/webp' }));
@@ -90,16 +78,13 @@ const IMG = (() => {
       throw new Error(`Resposta inválida da Edge Function (${res.status}).`);
     }
 
-    if (!res.ok) {
-      throw new Error(body.error || `Falha no upload (${res.status}).`);
-    }
+    if (!res.ok) throw new Error(body.error || `Falha no upload (${res.status}).`);
 
     const ref = { u: body.url, k };
     URLS.set(k, body.url);
     return { ref, dup: !!body.dup };
   }
 
-  /* Hash local (SHA-256 ou fallback simples) */
   async function hash(blob) {
     const u = new Uint8Array(await blob.arrayBuffer());
     if (window.crypto && crypto.subtle) {
@@ -113,13 +98,9 @@ const IMG = (() => {
     return (h >>> 0).toString(16) + u.length.toString(16);
   }
 
-  /* Upload de múltiplos arquivos */
   async function upload(files, onProgress) {
-    const refs = [],
-      errs = [];
-    let n = 0,
-      dups = 0;
-
+    const refs = [], errs = [];
+    let n = 0, dups = 0;
     for (const f of files) {
       try {
         const o = await one(f);
@@ -130,14 +111,8 @@ const IMG = (() => {
       }
       onProgress && onProgress(++n, files.length);
     }
-
     return { refs, errs, dups };
   }
-
-  /* ------------------------------------------------------------------
-     html(ref, opts) → <img src="..." loading="lazy" decoding="async" alt="...">
-     ------------------------------------------------------------------ */
-  const PX = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
 
   const html = (r, o = {}) => {
     r = R(r);
@@ -150,56 +125,29 @@ const IMG = (() => {
     return `<img src="${esc(src)}" alt="${alt}" decoding="async"${eager}${o.eager ? '' : ' loading="lazy"'}>`;
   };
 
-  /* ------------------------------------------------------------------
-     migrateLegacy() → reenvia imagens antigas do IndexedDB
-     ------------------------------------------------------------------ */
-  async function migrateLegacy() {
-    if (!('indexedDB' in window)) return;
-    let db;
-    try {
-      db = await new Promise((ok, no) => {
-        const r = indexedDB.open('bilinha_img', 1);
-        r.onsuccess = () => ok(r.result);
-        r.onerror = () => no(r.error);
-      });
-    } catch (e) {
-      return;
-    }
-
-    const t = db.transaction('b', 'readonly');
-    const store = t.objectStore('b');
-    const all = await new Promise((ok) => {
-      const q = store.getAll();
-      q.onsuccess = () => ok(q.result || []);
+  /* Remove a classe .sk do wrapper quando a imagem carrega OU falha.
+     Isso resolve o "carregando para sempre" quando a URL está quebrada. */
+  const hydrate = (root) => {
+    if (!root || !root.querySelectorAll) return;
+    root.querySelectorAll('img').forEach((img) => {
+      const clean = () => {
+        const parent = img.closest('.sk, .cd-i, .bn-s, .ac-i, .ct-i, .ci-i, .th, .phi, .pm-main, .pm-th');
+        if (parent) parent.classList.remove('sk');
+      };
+      if (img.complete) {
+        clean();
+      } else {
+        img.addEventListener('load', clean, { once: true });
+        img.addEventListener('error', clean, { once: true });
+      }
     });
+  };
 
-    const session = await SB.auth.getSession();
-    const token = session.data.session?.access_token;
-    if (!token) return;
-
-    for (const item of all) {
-      if (!item.full) continue;
-      try {
-        const form = new FormData();
-        form.append('file', new File([item.full], 'legacy.webp', { type: 'image/webp' }));
-        const res = await fetch(UPLOAD_URL, {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${token}` },
-          body: form
-        });
-        if (res.ok) {
-          const body = await res.json();
-          /* Atualizar referências no DB local (rascunho e produtos) */
-          const oldRef = item.k;
-          const newRef = body.url;
-          if (A.imgs) {
-            A.imgs = A.imgs.map((r) => (R(r)?.k === oldRef ? newRef : r));
-          }
-          /* Idealmente, também atualizar no Supabase se o produto já foi salvo */
-        }
-      } catch (e) {}
-    }
+  /* Migração legada: mantida como stub para compatibilidade com app.js */
+  async function migrateLegacy() {
+    // Na arquitetura nova (GitHub + Supabase), não há IndexedDB para migrar.
+    // Se algum dia reativar, implemente aqui.
   }
 
-  return { upload, html, migrateLegacy };
+  return { upload, html, hydrate, migrateLegacy };
 })();
