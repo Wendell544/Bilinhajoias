@@ -1,88 +1,185 @@
-/* Persistência local: dados leves, versão do esquema, rascunhos e preferências */
-const Store={
-  get(k,d=null){try{const v=JSON.parse(localStorage.getItem(k));return v===null||v===undefined?d:v}catch(e){return d}},
-  set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}
-    catch(e){if(e && e.name==='QuotaExceededError'){toast('Sem espaço local. Remova fotos ou itens para continuar.');}else{toast('Falha ao salvar dados localmente.');}return false}},
-  del(k){try{localStorage.removeItem(k)}catch(e){}},
-  info(){let used=0,items=0;for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith(PFX)){used+=(localStorage.getItem(k)||'').length;items++}}return{used,items}}
-};
-const DB={prod:[],cart:[],ban:[],ads:[],cats:[],set:{}};
-const okP=p=>p&&typeof p.title==='string'&&p.title.trim()&&p.price>=0&&typeof p.category==='string';
-const wa=t=>'https://wa.me/'+(DB.set.wa||WAD)+'?text='+encodeURIComponent(t);
-const lk=o=>okUrl(o.link)?o.link:wa('Olá! Vi “'+(o.title||'o anúncio')+'” no site e gostaria de saber mais.');
-const save=k=>{const ok=Store.set(KEY[k],DB[k]);if(ok&&k!=='cart'&&typeof A!=='undefined'&&A.ok)Store.set(KEY.chg,Date.now());return ok};
-const saveAll=()=>{['prod','cart','ban','ads','cats','set'].forEach(save);Store.set(KEY.meta,{v:V,at:Date.now()})};
+/* Persistência: dados agora vêm do Supabase (Postgres).
+   O carrinho e preferências permanecem locais (localStorage). */
 
-function load(){
-  const m=Store.get(KEY.meta,{v:1});let d=m.v<V;
-  DB.set={...SET0,...Store.get(KEY.set,{})};
-  DB.set.show={...SET0.show,...(DB.set.show||{})};
-  DB.prod=Store.get(KEY.prod);DB.cart=Store.get(KEY.cart,[]);
-  DB.ban=Store.get(KEY.ban);DB.ads=Store.get(KEY.ads);DB.cats=Store.get(KEY.cats);
-  if(!Array.isArray(DB.prod)){DB.prod=seed();d=true}
-  DB.prod=DB.prod.filter(okP).map(p=>{
-    if(!Array.isArray(p.images)){p.images=p.imageUrl?[p.imageUrl]:[];d=true}
-    p.images=p.images.map(r=>{if(r&&r.l){d=true;return{k:r.k}}return r});
-    if(p.available===undefined)p.available=true;
-    return p
-  });
-  if(!Array.isArray(DB.cats)){
-    const n=[...CATS0];DB.prod.forEach(p=>{if(!n.includes(p.category))n.push(p.category)});
-    DB.cats=n.map((name,i)=>({id:i+1,name,on:true,img:null}));d=true
-  }
-  if(!Array.isArray(DB.ban)){
-    const o=Store.get(KEY.oban);
-    DB.ban=o&&o.on&&(o.img||o.title)?[{id:1,on:true,title:o.title||'',sub:o.text||'',btn:o.btn||'',link:o.link||'',img:o.img||null}]:[];d=true
-  }
-  if(!Array.isArray(DB.ads)){DB.ads=ads0();d=true}
-  DB.cart=(Array.isArray(DB.cart)?DB.cart:[]).filter(c=>c&&c.qty>0&&DB.prod.some(p=>p.id===c.id));
-  if(d)saveAll()
-}
-const Prefs={get:()=>Store.get(KEY.pref,{}),set:o=>Store.set(KEY.pref,{...Prefs.get(),...o})};
-const Draft={get:()=>Store.get(KEY.draft),set:v=>Store.set(KEY.draft,v),clear:()=>Store.del(KEY.draft)};
-const Log={get:()=>Store.get(KEY.log,[]),add(m){const l=Log.get();l.unshift({t:Date.now(),m:String(m).slice(0,160)});Store.set(KEY.log,l.slice(0,20))}};
-/* Catálogo publicado (data/catalog.json): é o que os clientes veem em qualquer aparelho */
-async function loadRemote(ms=4000){
-  try{
-    const c=new AbortController(),t=setTimeout(()=>c.abort(),ms),r=await fetch('data/catalog.json',{cache:'no-cache',signal:c.signal});
-    clearTimeout(t);
-    if(!r.ok)return false;
-    const d=await r.json();
-    if(!d||!Array.isArray(d.prod))return false;
-    DB.prod=d.prod.filter(okP).map(p=>({...p,images:Array.isArray(p.images)?p.images:[],available:p.available!==false}));
-    if(Array.isArray(d.ban))DB.ban=d.ban;
-    if(Array.isArray(d.ads))DB.ads=d.ads;
-    if(Array.isArray(d.cats))DB.cats=d.cats;
-    if(d.set&&typeof d.set==='object'){DB.set={...SET0,...d.set};DB.set.show={...SET0.show,...(d.set.show||{})}}
-    DB.cart=DB.cart.filter(x=>x&&x.qty>0&&DB.prod.some(p=>p.id===x.id));
-    return true
-  }catch(e){return false}
-}
-
-/* Histórico de "interesse" (proxy de popularidade): +1 ao adicionar à sacola */
-const Hist={
-  get:()=>Store.get(KEY.hist,{}),
-  bump:id=>{const h=Store.get(KEY.hist,{});h[id]=(h[id]||0)+1;Store.set(KEY.hist,h)},
-  top:n=>{const h=Store.get(KEY.hist,{});return Object.entries(h).sort((a,b)=>b[1]-a[1]).slice(0,n).map(([id])=>+id)}
-};
-
-/* Backup / Restore */
-const Backup={
-  dump:()=>({v:V,at:Date.now(),prod:DB.prod,ban:DB.ban,ads:DB.ads,cats:DB.cats,set:DB.set}),
-  download(){
-    const b=new Blob([JSON.stringify(Backup.dump(),null,2)],{type:'application/json'});
-    const a=document.createElement('a');a.href=URL.createObjectURL(b);
-    a.download='bilinha-backup-'+new Date().toISOString().slice(0,10)+'.json';
-    a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+const Store = {
+  get(k, d = null) {
+    try {
+      const v = JSON.parse(localStorage.getItem(k));
+      return v === null || v === undefined ? d : v;
+    } catch (e) {
+      return d;
+    }
   },
-  async load(file){
-    const d=JSON.parse(await file.text());
-    if(!d||typeof d!=='object')throw new Error('inválido');
-    if(Array.isArray(d.prod))DB.prod=d.prod.filter(okP).map(p=>({...p,available:p.available!==false}));
-    if(Array.isArray(d.ban))DB.ban=d.ban;
-    if(Array.isArray(d.ads))DB.ads=d.ads;
-    if(Array.isArray(d.cats))DB.cats=d.cats;
-    if(d.set&&typeof d.set==='object'){DB.set={...SET0,...d.set};DB.set.show={...SET0.show,...(d.set.show||{})}}
-    saveAll();return true;
+  set(k, v) {
+    try {
+      localStorage.setItem(k, JSON.stringify(v));
+      return true;
+    } catch (e) {
+      if (e && e.name === 'QuotaExceededError') {
+        toast('Sem espaço local. Remova itens para continuar.');
+      } else {
+        toast('Falha ao salvar dados localmente.');
+      }
+      return false;
+    }
+  },
+  del(k) {
+    try {
+      localStorage.removeItem(k);
+    } catch (e) {}
+  },
+  info() {
+    let used = 0,
+      items = 0;
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith(PFX)) {
+        used += (localStorage.getItem(k) || '').length;
+        items++;
+      }
+    }
+    return { used, items };
+  }
+};
+
+const DB = { prod: [], cart: [], ban: [], ads: [], cats: [], set: {} };
+
+const okP = (p) =>
+  p &&
+  typeof p.title === 'string' &&
+  p.title.trim() &&
+  p.price >= 0 &&
+  typeof p.category === 'string';
+
+const wa = (t) =>
+  'https://wa.me/' + (DB.set.wa || WAD) + '?text=' + encodeURIComponent(t);
+
+const lk = (o) =>
+  okUrl(o.link)
+    ? o.link
+    : wa('Olá! Vi “' + (o.title || 'o anúncio') + '” no site e gostaria de saber mais.');
+
+/* ---------- Carregamento principal (assíncrono) ---------- */
+async function loadFromSupabase() {
+  const [prodRes, banRes, adsRes, catsRes, setRes] = await Promise.all([
+    SB.from('products').select('*').order('sort_order', { ascending: true }),
+    SB.from('banners').select('*').order('sort_order', { ascending: true }),
+    SB.from('ads').select('*').order('sort_order', { ascending: true }),
+    SB.from('categories').select('*').order('sort_order', { ascending: true }),
+    SB.from('settings').select('data').eq('id', 1).maybeSingle()
+  ]);
+
+  if (prodRes.error) console.error('load products:', prodRes.error);
+  if (banRes.error) console.error('load banners:', banRes.error);
+  if (adsRes.error) console.error('load ads:', adsRes.error);
+  if (catsRes.error) console.error('load categories:', catsRes.error);
+  if (setRes.error) console.error('load settings:', setRes.error);
+
+  DB.prod = (prodRes.data ?? []).filter(okP).map((p) => ({
+    ...p,
+    images: Array.isArray(p.images) ? p.images : [],
+    available: p.available !== false
+  }));
+
+  DB.ban = banRes.data ?? [];
+  DB.ads = adsRes.data ?? [];
+  DB.cats = catsRes.data ?? [];
+
+  const s = setRes.data?.data ?? {};
+  DB.set = { ...SET0, ...s };
+  DB.set.show = { ...SET0.show, ...(s.show || {}) };
+
+  /* Carrinho local: manter apenas itens que ainda existem */
+  DB.cart = (Store.get(KEY.cart, []) || []).filter(
+    (c) => c && c.qty > 0 && DB.prod.some((p) => p.id === c.id)
+  );
+
+  /* Se não houver nenhum produto, usar seed apenas em modo demonstração */
+  if (!DB.prod.length) {
+    DB.prod = seed();
+  }
+}
+
+/* ---------- Preferências (tema, categoria, ordenação) ---------- */
+const Prefs = {
+  get: () => Store.get(KEY.pref, {}),
+  set: (o) => Store.set(KEY.pref, { ...Prefs.get(), ...o })
+};
+
+/* ---------- Rascunho de produto ---------- */
+const Draft = {
+  get: () => Store.get(KEY.draft),
+  set: (v) => Store.set(KEY.draft, v),
+  clear: () => Store.del(KEY.draft)
+};
+
+/* ---------- Log de erros ---------- */
+const Log = {
+  get: () => Store.get(KEY.log, []),
+  add(m) {
+    const l = Log.get();
+    l.unshift({ t: Date.now(), m: String(m).slice(0, 160) });
+    Store.set(KEY.log, l.slice(0, 20));
+  }
+};
+
+/* ---------- Histórico de interesse (populares) ---------- */
+const Hist = {
+  get: () => Store.get(KEY.hist, {}),
+  bump: (id) => {
+    const h = Store.get(KEY.hist, {});
+    h[id] = (h[id] || 0) + 1;
+    Store.set(KEY.hist, h);
+  },
+  top: (n) => {
+    const h = Store.get(KEY.hist, {});
+    return Object.entries(h)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, n)
+      .map(([id]) => +id);
+  }
+};
+
+/* ---------- Backup / Restore (agora exporta o estado atual do DB) ---------- */
+const Backup = {
+  dump: () => ({
+    v: V,
+    at: Date.now(),
+    prod: DB.prod,
+    ban: DB.ban,
+    ads: DB.ads,
+    cats: DB.cats,
+    set: DB.set
+  }),
+  download() {
+    const b = new Blob([JSON.stringify(Backup.dump(), null, 2)], {
+      type: 'application/json'
+    });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(b);
+    a.download = 'bilinha-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  },
+  async load(file) {
+    const d = JSON.parse(await file.text());
+    if (!d || typeof d !== 'object') throw new Error('inválido');
+    /* Restaurar via Supabase (upsert em massa) */
+    if (Array.isArray(d.prod)) {
+      const rows = d.prod.filter(okP).map((p) => ({
+        ...p,
+        available: p.available !== false,
+        images: Array.isArray(p.images) ? p.images : []
+      }));
+      if (rows.length) await SB.from('products').upsert(rows);
+    }
+    if (Array.isArray(d.ban)) await SB.from('banners').upsert(d.ban);
+    if (Array.isArray(d.ads)) await SB.from('ads').upsert(d.ads);
+    if (Array.isArray(d.cats)) await SB.from('categories').upsert(d.cats);
+    if (d.set && typeof d.set === 'object') {
+      await SB.from('settings').upsert({ id: 1, data: d.set });
+    }
+    await loadFromSupabase();
+    return true;
   }
 };

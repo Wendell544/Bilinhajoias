@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Inter:wght@400;600&display=swap">
-<link rel="stylesheet" href="css/style.css?v=5">
+<link rel="stylesheet" href="css/style.css?v=6">
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"JewelryStore","name":"Bilinha Jóias e Pratas","description":"Pratas 925, alianças, relógios e peças selecionadas.","areaServed":"BR"}
 </script>
@@ -82,6 +82,7 @@
 </aside>
 <div id="lg" class="md hid"><div role="dialog" aria-modal="true" aria-label="Acesso restrito">
   <h2 class="serif h2">Acesso restrito</h2>
+  <input id="em" type="email" class="in" placeholder="E-mail" autocomplete="username">
   <input id="pw" type="password" class="in" placeholder="Senha" autocomplete="current-password">
   <p id="pe" class="err hid"></p>
   <div class="row"><button class="b ghost grow" data-a="close">Cancelar</button><button class="b gold grow" data-a="login">Entrar</button></div>
@@ -89,12 +90,16 @@
 <div id="pm" class="md pm hid"><div id="pmb" role="dialog" aria-modal="true"></div></div>
 <div id="adm" class="adm hid"></div>
 <div id="ts" class="ts gold hid" role="status" aria-live="polite"></div>
-<script src="js/config.js?v=5" defer></script>
-<script src="js/storage.js?v=5" defer></script>
-<script src="js/images.js?v=5" defer></script>
-<script src="js/auth.js?v=5" defer></script>
-<script src="js/shop.js?v=5" defer></script>
-<script src="js/admin.js?v=5" defer></script>
-<script src="js/app.js?v=5" defer></script>
+
+<!-- SDK do Supabase (CDN) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.js"></script>
+
+<script src="js/config.js?v=6" defer></script>
+<script src="js/storage.js?v=6" defer></script>
+<script src="js/images.js?v=6" defer></script>
+<script src="js/auth.js?v=6" defer></script>
+<script src="js/shop.js?v=6" defer></script>
+<script src="js/admin.js?v=6" defer></script>
+<script src="js/app.js?v=6" defer></script>
 </body>
 </html>
