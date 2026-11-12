@@ -1,4 +1,4 @@
-/* Configuração global, constantes e utilitários de interface */
+﻿/* ConfiguraÃ§Ã£o global, constantes e utilitÃ¡rios de interface */
 const V = 6, PFX = 'bilinha_joias_', KEY = {
   prod: PFX + 'products',
   cart: PFX + 'cart',
@@ -20,24 +20,24 @@ const V = 6, PFX = 'bilinha_joias_', KEY = {
 };
 
 /* ---- Supabase ---- */
-const SB_URL = 'COLE_AQUI_A_URL_DO_SEU_PROJETO_SUPABASE';
-const SB_KEY = 'COLE_AQUI_A_ANON_KEY_DO_SUPABASE';
+const SB_URL = 'https://ncrsodkpduroulzkpaky.supabase.co';
+const SB_KEY = 'sb_publishable_OOejb1xfSYPHVD8Xf4F09g_YT_Sa5lu';
 
-/* ---- GitHub (apenas exibição nas instruções) ---- */
+/* ---- GitHub (apenas exibiÃ§Ã£o nas instruÃ§Ãµes) ---- */
 const GH_OWNER = 'Wendell544';
 const GH_REPO = 'Bilinhajoias';
 
 const WAD = ['5583', '9990', '74027'].join('');
-const CATS0 = ['Pratas', 'Relógios', 'Alianças', 'Colares', 'Óculos', 'Combos'];
+const CATS0 = ['Pratas', 'RelÃ³gios', 'AlianÃ§as', 'Colares', 'Ã“culos', 'Combos'];
 
 const SET0 = {
-  kick: 'São Bento · Paraíba',
-  title: 'Autenticidade e Tradição que Brilham em Joias',
-  text: 'Pratas 925, alianças, relógios e peças selecionadas com cuidado. Escolha o que ama e finalize no WhatsApp.',
+  kick: 'SÃ£o Bento Â· ParaÃ­ba',
+  title: 'Autenticidade e TradiÃ§Ã£o que Brilham em Joias',
+  text: 'Pratas 925, alianÃ§as, relÃ³gios e peÃ§as selecionadas com cuidado. Escolha o que ama e finalize no WhatsApp.',
   about: '',
   wa: WAD,
   email: '',
-  addr: 'São Bento – PB',
+  addr: 'SÃ£o Bento â€“ PB',
   ig: 'bilinha_joias',
   fb: '',
   sec: 6,
@@ -92,7 +92,7 @@ const drawer = (on) => {
   lock();
 };
 
-/* ---- Ícones SVG ---- */
+/* ---- Ãcones SVG ---- */
 const IC = {
   gem: '<path d="M6 3h12l4 6-10 12L2 9z"/><path d="M11 3 8 9l4 12 4-12-3-6"/><path d="M2 9h20"/>',
   search: '<circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>',
@@ -128,16 +128,16 @@ const art = (h) =>
       ',22%,8%)"/></radialGradient></defs><rect width="400" height="400" fill="url(#g)"/><g fill="none" stroke="#D4AF37" stroke-width="3" stroke-linejoin="round"><path d="M140 150h120l40 50-100 110-100-110z"/><path d="M100 200h200M140 150l60 160 60-160M170 150l30 50 30-50"/></g><text x="200" y="365" text-anchor="middle" font-family="Georgia,serif" font-size="20" letter-spacing="6" fill="#D4AF37" opacity=".7">BILINHA</text></svg>',
   );
 
-/* ---- Dados de demonstração (seed inicial) ---- */
+/* ---- Dados de demonstraÃ§Ã£o (seed inicial) ---- */
 const seed = () => [
-  ['Colar de Prata 925 com Inicial', 'Colares', 189.9, 159.9, '6x sem juros', 'Prata 925 com banho de ródio, corrente de 45 cm e fecho lagosta.', 1, 215],
-  ['Aliança de Ouro 18k', 'Alianças', 1490, 0, '10x sem juros', 'Ouro 18k, acabamento polido, 4 mm. Vendida por unidade.', 1, 42],
-  ['Relógio Cronógrafo Luxe', 'Relógios', 899.9, 749.9, '10x sem juros', 'Caixa de aço 42 mm, pulseira metálica e cronógrafo.', 0, 225],
-  ['Brinco de Pérola Natural', 'Pratas', 229.9, 0, '6x sem juros', 'Pérola natural de 8 mm com haste em prata 925.', 0, 335],
-  ['Óculos de Sol Cat-Eye', 'Óculos', 329.9, 279.9, '5x sem juros', 'Armação cat-eye em acetato, lentes com proteção UV400.', 0, 200],
-  ['Pulseira Berloque', 'Pratas', 349.9, 0, '8x sem juros', 'Prata 925 de 18 cm com fecho de segurança para berloques.', 1, 275],
-  ['Conjunto Coração Zircônia', 'Combos', 419.9, 369.9, '10x sem juros', 'Colar e brincos de coração com zircônias e banho de ródio.', 0, 350],
-  ['Anel Solitário Prata', 'Pratas', 259.9, 0, '6x sem juros', 'Solitário em prata 925 com zircônia de 6 mm. Aro ajustável.', 0, 160]
+  ['Colar de Prata 925 com Inicial', 'Colares', 189.9, 159.9, '6x sem juros', 'Prata 925 com banho de rÃ³dio, corrente de 45 cm e fecho lagosta.', 1, 215],
+  ['AlianÃ§a de Ouro 18k', 'AlianÃ§as', 1490, 0, '10x sem juros', 'Ouro 18k, acabamento polido, 4 mm. Vendida por unidade.', 1, 42],
+  ['RelÃ³gio CronÃ³grafo Luxe', 'RelÃ³gios', 899.9, 749.9, '10x sem juros', 'Caixa de aÃ§o 42 mm, pulseira metÃ¡lica e cronÃ³grafo.', 0, 225],
+  ['Brinco de PÃ©rola Natural', 'Pratas', 229.9, 0, '6x sem juros', 'PÃ©rola natural de 8 mm com haste em prata 925.', 0, 335],
+  ['Ã“culos de Sol Cat-Eye', 'Ã“culos', 329.9, 279.9, '5x sem juros', 'ArmaÃ§Ã£o cat-eye em acetato, lentes com proteÃ§Ã£o UV400.', 0, 200],
+  ['Pulseira Berloque', 'Pratas', 349.9, 0, '8x sem juros', 'Prata 925 de 18 cm com fecho de seguranÃ§a para berloques.', 1, 275],
+  ['Conjunto CoraÃ§Ã£o ZircÃ´nia', 'Combos', 419.9, 369.9, '10x sem juros', 'Colar e brincos de coraÃ§Ã£o com zircÃ´nias e banho de rÃ³dio.', 0, 350],
+  ['Anel SolitÃ¡rio Prata', 'Pratas', 259.9, 0, '6x sem juros', 'SolitÃ¡rio em prata 925 com zircÃ´nia de 6 mm. Aro ajustÃ¡vel.', 0, 160]
 ].map((a, i) => ({
   id: i + 1,
   title: a[0],
@@ -155,9 +155,9 @@ const ads0 = () => [
   {
     id: 1,
     on: true,
-    title: 'Peça pelo WhatsApp',
+    title: 'PeÃ§a pelo WhatsApp',
     text: 'Monte sua sacola e finalize com atendimento direto da loja.',
-    btn: 'Começar agora',
+    btn: 'ComeÃ§ar agora',
     link: '',
     img: null
   },
@@ -165,7 +165,7 @@ const ads0 = () => [
     id: 2,
     on: true,
     title: 'Combos para presentear',
-    text: 'Conjuntos selecionados. Consulte condições no WhatsApp.',
+    text: 'Conjuntos selecionados. Consulte condiÃ§Ãµes no WhatsApp.',
     btn: 'Consultar',
     link: '',
     img: null
@@ -173,5 +173,5 @@ const ads0 = () => [
 ];
 
 /* ---- Cliente Supabase (global) ---- */
-/* O SDK é carregado no index.html; aqui apenas criamos o cliente. */
+/* O SDK Ã© carregado no index.html; aqui apenas criamos o cliente. */
 const SB = supabase.createClient(SB_URL, SB_KEY);
