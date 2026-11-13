@@ -11,14 +11,12 @@ const CORS = {
 };
 
 const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
-
 const GITHUB_API = 'https://api.github.com';
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: CORS });
   }
-
   if (req.method !== 'POST') {
     return json({ error: 'Método não permitido. Use POST.' }, 405);
   }
@@ -27,9 +25,7 @@ Deno.serve(async (req) => {
     // 1) Verificar JWT
     const authHeader = req.headers.get('Authorization') ?? '';
     const token = authHeader.replace(/^Bearer\s+/i, '');
-    if (!token) {
-      return json({ error: 'Token de autenticação ausente.' }, 401);
-    }
+    if (!token) return json({ error: 'Token de autenticação ausente.' }, 401);
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
@@ -39,7 +35,6 @@ Deno.serve(async (req) => {
     if (userError || !userData?.user) {
       return json({ error: 'Token inválido ou expirado.' }, 401);
     }
-
     const user = userData.user;
     if (user.app_metadata?.role !== 'admin') {
       return json({ error: 'Acesso negado. Apenas administradores podem enviar imagens.' }, 403);
@@ -51,11 +46,9 @@ Deno.serve(async (req) => {
     if (!(file instanceof File)) {
       return json({ error: 'Campo "file" ausente ou inválido.' }, 400);
     }
-
     if (file.type !== 'image/webp') {
       return json({ error: 'Formato inválido. Envie apenas WebP.' }, 415);
     }
-
     if (file.size > MAX_BYTES) {
       return json({ error: 'Arquivo muito grande. O limite é 5 MB.' }, 413);
     }
@@ -90,22 +83,20 @@ Deno.serve(async (req) => {
     // 5) Verificar se já existe
     const checkUrl = `${GITHUB_API}/repos/${owner}/${repo}/contents/${path}?ref=${branch}`;
     const checkRes = await fetch(checkUrl, { headers: ghHeaders });
-
     const publicUrl = `https://${owner}.github.io/${repo}/img/${fileName}`;
 
     if (checkRes.ok) {
-      // Já existe → idempotente
       return json({ url: publicUrl, name: fileName, dup: true });
     }
-
     if (checkRes.status !== 404) {
       const errText = await checkRes.text();
       return json({ error: `Erro ao verificar arquivo no GitHub: ${checkRes.status} ${errText}` }, 502);
     }
 
-    // 6) Criar arquivo via PUT (base64)
-    const base64 = btoa(String.fromCharCode(...bytes));
+    // 6) Codificar em base64 SEM estourar a pilha (chunks de 8 KB)
+    const base64 = toBase64(bytes);
 
+    // 7) Comitar via PUT
     const putRes = await fetch(`${GITHUB_API}/repos/${owner}/${repo}/contents/${path}`, {
       method: 'PUT',
       headers: { ...ghHeaders, 'Content-Type': 'application/json' },
@@ -127,6 +118,18 @@ Deno.serve(async (req) => {
     return json({ error: `Erro inesperado: ${e instanceof Error ? e.message : String(e)}` }, 500);
   }
 });
+
+/* Converte Uint8Array para base64 em blocos, evitando "Maximum call stack size exceeded". */
+function toBase64(bytes: Uint8Array): string {
+  const CHUNK = 0x8000; // 32 KB
+  let bin = '';
+  for (let i = 0; i < bytes.length; i += CHUNK) {
+    const slice = bytes.subarray(i, i + CHUNK);
+    // @ts-ignore — spread de Uint8Array tipado como number[] é aceito em runtime
+    bin += String.fromCharCode.apply(null, slice as unknown as number[]);
+  }
+  return btoa(bin);
+}
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {

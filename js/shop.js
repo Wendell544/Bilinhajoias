@@ -6,7 +6,7 @@ const lines=()=>DB.cart.map(c=>({p:DB.prod.find(p=>p.id===c.id),qty:c.qty})).fil
 const total=L=>L.reduce((s,l)=>s+pr(l.p)*l.qty,0);
 
 function chips(){
-  const L=['Todos',...DB.cats.filter(c=>c.on).map(c=>c.name)];
+  const L=['Todos',...DB.categories.filter(c=>c.on).map(c=>c.name)];
   if(!L.includes(S.cat))S.cat='Todos';
   $('chips').innerHTML=L.map(c=>`<button class="chip b${c===S.cat?' on':''}" data-a="cat" data-v="${esc(c)}" aria-pressed="${c===S.cat}">${esc(c)}</button>`).join('')
 }
@@ -47,7 +47,7 @@ const sec=(id,t,inner,c='')=>`<section class="w sec"><div class="row sp"><h2 cla
 function rails(){
   const s=DB.set.show,P=DB.prod,o=[];
   if(s.cats){
-    const c=DB.cats.filter(x=>x.on);
+    const c=DB.categories.filter(x=>x.on);
     if(c.length>1)o.push(sec('cats','Compre por categoria',c.map(x=>`<button class="ct" data-a="cat" data-v="${esc(x.name)}"><span class="ct-i sk">${IMG.html(x.img,{alt:x.name,s:'card'})}</span><span class="serif">${esc(x.name)}</span></button>`).join(''),' rl-cats'))
   }
   const a=DB.ads.filter(x=>x.on);
@@ -85,7 +85,7 @@ function grid(){
 }
 
 function banner(){
-  const L=DB.ban.filter(b=>b.on),el=$('bnr');
+  const L=DB.banners.filter(b=>b.on),el=$('bnr');
   stop();el.classList.toggle('hid',!L.length);$('hero').classList.toggle('hid',!!L.length);
   if(!L.length){el.innerHTML='';return}
   BN.n=L.length;BN.i=Math.min(BN.i,BN.n-1);

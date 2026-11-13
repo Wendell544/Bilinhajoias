@@ -13,11 +13,11 @@ const A = {
 };
 
 const TABS = ['Produtos', 'Banners', 'Categorias', 'Anúncios', 'Aparência', 'Senha'];
-const MK = ['', 'ban', 'cats', 'ads'];
+const MK = ['', 'banners', 'categories', 'ads'];
 const PF = ['title', 'cat', 'price', 'promo', 'inst', 'desc'];
 
 const MG = {
-  ban: {
+  banners: {
     t: 'Banners',
     on: 'Exibir no site',
     h: 'Imagem ideal: 1600×700 px. Banner só com imagem (sem textos) aparece inteiro. A ordem da lista é a ordem do carrossel.',
@@ -28,7 +28,7 @@ const MG = {
       ['link', 'Link do botão (vazio = WhatsApp)']
     ]
   },
-  cats: {
+  categories: {
     t: 'Categorias',
     on: 'Categoria ativa',
     h: 'A ordem da lista é a ordem dos filtros da loja.',
@@ -144,7 +144,7 @@ async function show(n) {
   const k = MK[A.tab];
   if (k && (!A.m || A.m.k !== k)) A.m = { k, id: null, img: null };
 
-  $('ab').innerHTML = (await [tProd, () => tMgr('ban'), () => tMgr('cats'), () => tMgr('ads'), tSet, tPw][A.tab]());
+  $('ab').innerHTML = (await [tProd, () => tMgr('banners'), () => tMgr('categories'), () => tMgr('ads'), tSet, tPw][A.tab]());
   if (A.tab === 0) {
     phs();
     plist();
@@ -210,7 +210,7 @@ function tProd() {
       ${F('pf-title', 'Nome do produto', 'maxlength=120', 'full')}
       <label class="lb">Categoria
         <select class="in" id="pf-cat">
-          ${DB.cats.map((c) => `<option>${esc(c.name)}</option>`).join('')}
+          ${DB.categories.map((c) => `<option>${esc(c.name)}</option>`).join('')}
         </select>
       </label>
       ${F('pf-inst', 'Parcelamento', 'maxlength=40 placeholder="10x sem juros"')}
@@ -768,9 +768,9 @@ ACT.msave = async (k) => {
   m.f.forEach(([f]) => (o[f] = $('mf-' + f).value.trim()));
   if (A.m.img) o.img = { u: A.m.img };
 
-  if (k === 'cats') {
+  if (k === 'categories') {
     if (!o.name) return toast('Informe o nome da categoria.');
-    if (DB.cats.some((c) => c.id !== A.m.id && nz(c.name) === nz(o.name)))
+    if (DB.categories.some((c) => c.id !== A.m.id && nz(c.name) === nz(o.name)))
       return toast('Já existe uma categoria com esse nome.');
   } else if (!o.title && !o.img) {
     return toast('Informe um título ou envie uma imagem.');
@@ -810,7 +810,7 @@ ACT.mdel = async (v) => {
     x = DB[k].find((y) => y.id == id);
   const key = k + id;
   if (!x) return;
-  if (k === 'cats' && DB.prod.some((p) => p.category === x.name))
+  if (k === 'categories' && DB.prod.some((p) => p.category === x.name))
     return toast('Mova ou exclua os produtos desta categoria antes.');
 
   if (A.del === key) {

@@ -42,7 +42,7 @@ const Store = {
   }
 };
 
-const DB = { prod: [], cart: [], ban: [], ads: [], cats: [], set: {} };
+const DB = { prod: [], cart: [], banners: [], ads: [], categories: [], set: {} };
 
 const okP = (p) =>
   p &&
@@ -81,9 +81,9 @@ async function loadFromSupabase() {
     available: p.available !== false
   }));
 
-  DB.ban = banRes.data ?? [];
+  DB.banners = banRes.data ?? [];
   DB.ads = adsRes.data ?? [];
-  DB.cats = catsRes.data ?? [];
+  DB.categories = catsRes.data ?? [];
 
   const s = setRes.data?.data ?? {};
   DB.set = { ...SET0, ...s };
@@ -146,9 +146,9 @@ const Backup = {
     v: V,
     at: Date.now(),
     prod: DB.prod,
-    ban: DB.ban,
+    banners: DB.banners,
     ads: DB.ads,
-    cats: DB.cats,
+    categories: DB.categories,
     set: DB.set
   }),
   download() {
@@ -173,9 +173,12 @@ const Backup = {
       }));
       if (rows.length) await SB.from('products').upsert(rows);
     }
-    if (Array.isArray(d.ban)) await SB.from('banners').upsert(d.ban);
+    /* Aceita formato novo (banners/categories) e backup antigo (ban/cats) */
+    const banners = d.banners ?? d.ban;
+    if (Array.isArray(banners)) await SB.from('banners').upsert(banners);
     if (Array.isArray(d.ads)) await SB.from('ads').upsert(d.ads);
-    if (Array.isArray(d.cats)) await SB.from('categories').upsert(d.cats);
+    const categories = d.categories ?? d.cats;
+    if (Array.isArray(categories)) await SB.from('categories').upsert(categories);
     if (d.set && typeof d.set === 'object') {
       await SB.from('settings').upsert({ id: 1, data: d.set });
     }
