@@ -893,7 +893,7 @@ ACT.cleanup = async () => {
   out.textContent = 'Limpando…';
   const session = await Auth.getSession();
   if (!session) return toast('Sessão expirada. Faça login novamente.');
-  const res = await fetch(`${SB_URL}/functions/v1/cleanup-orphans`, {
+  const res = await fetch(`${SB_URL}/functions/v1/hyper-action`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${session.access_token}` }
   });
