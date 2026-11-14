@@ -1,4 +1,4 @@
-﻿const V = 7, PFX = 'bilinha_joias_', KEY = {
+﻿const V = 8, PFX = 'bilinha_joias_', KEY = {
   prod: PFX + 'products',
   cart: PFX + 'cart',
   ban: PFX + 'banners',
@@ -40,6 +40,7 @@ const SET0 = {
   sec: 6,
   page: 12,
   mb: 5,
+  hero_bg: null,
   show: { feat: 1, promo: 1, news: 1, cats: 1, ads: 1, best: 1 }
 };
 

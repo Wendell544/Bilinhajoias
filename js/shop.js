@@ -4,18 +4,24 @@ const inst=p=>{const m=/^\s*(\d+)\s*x\s*(.*)$/i.exec(p.installment||'');return m
 const lines=()=>DB.cart.map(c=>({p:DB.prod.find(p=>p.id===c.id),qty:c.qty})).filter(l=>l.p);
 const total=L=>L.reduce((s,l)=>s+pr(l.p)*l.qty,0);
 
-function chips(){
-  const L=['Todos',...DB.categories.filter(c=>c.on).map(c=>c.name)];
-  if(!L.includes(S.cat))S.cat='Todos';
-  $('chips').innerHTML=L.map(c=>`<button class="chip b${c===S.cat?' on':''}" data-a="cat" data-v="${esc(c)}" aria-pressed="${c===S.cat}">${esc(c)}</button>`).join('')
-}
 function hero(){
   const s=DB.set;
+  const bg = s.hero_bg ? (s.hero_bg.u || s.hero_bg) : '';
+  const hEl = document.querySelector('.hero');
+  if(bg && hEl){
+    hEl.style.backgroundImage = `linear-gradient(to bottom, rgba(0,0,0,0.6), rgba(0,0,0,0.8)), url('${bg}')`;
+    hEl.style.backgroundSize = 'cover';
+    hEl.style.backgroundPosition = 'center';
+  } else if(hEl) {
+    hEl.style.backgroundImage = '';
+  }
+  
   $('hk').textContent=s.kick;
   $('ht').innerHTML=esc(s.title).replace(/(\S+)$/,'<span class="gt">$1</span>');
   $('hx').textContent=s.text;
   $('hw').href=wa('Olá! Vim pelo site da Bilinha Jóias e Pratas e gostaria de ajuda.');
 }
+
 const card=p=>{
   const v=pr(p),off=v<p.price,un=p.available===false;
   const isNew=p.created_at&&(Date.now()-new Date(p.created_at).getTime()<30*864e5);
@@ -92,8 +98,8 @@ function banner(){
   stop();el.classList.toggle('hid',!L.length);$('hero').classList.toggle('hid',!!L.length);
   if(!L.length){el.innerHTML='';return}
   BN.n=L.length;BN.i=Math.min(BN.i,BN.n-1);
-  const isVert = L.some(b => b.layout === 'vertical');
-  el.innerHTML=`<div class="bn${isVert?' vert':''}${L.some(b=>b.title||b.sub||b.btn)?' tx':''}" id="bnv" role="region" aria-roledescription="carrossel" aria-label="Destaques da loja" tabindex="0"><div class="bn-t" id="bnt">${L.map((b,i)=>{
+  const layout = L[0]?.layout || 'horizontal';
+  el.innerHTML=`<div class="bn tx" data-layout="${layout}" id="bnv" role="region" aria-roledescription="carrossel" aria-label="Destaques da loja" tabindex="0"><div class="bn-t" id="bnt">${L.map((b,i)=>{
     const t=b.title||b.sub||b.btn;
     return`<div class="bn-s${b.img?' sk':' hero'}${i===BN.i?' on':''}" role="group" aria-roledescription="slide" aria-label="${i+1} de ${L.length}">
       ${b.img?IMG.html(b.img,{s:'full',alt:b.title||'Banner',eager:i===0,now:1}):''}
@@ -188,11 +194,11 @@ function footer(){
   $('ft').innerHTML=`<span class="tg">${ic('gem',26)}</span><div class="serif tg h2">Bilinha Jóias e Pratas</div>${s.about?`<p style="max-width:560px">${esc(s.about)}</p>`:''}<p>${esc(s.addr)}</p><div class="lk">${L.join('')}</div><button class="dots-btn" data-a="admin" tabindex="-1" aria-hidden="true">•••</button>`
 }
 
-const render=()=>{chips();hero();banner();rails();grid();cartUI();footer()};
+const render=()=>{hero();banner();rails();grid();cartUI();footer()};
 const pop=()=>{const b=$('bd');b.classList.remove('pop');void b.offsetWidth;b.classList.add('pop')};
 const cartSave=()=>{Store.set(KEY.cart,DB.cart);cartUI()};
 
-ACT.cat=c=>{S.cat=c;S.n=0;Prefs.set({cat:c});chips();grid();$('colecao').scrollIntoView({behavior:'smooth'})};
+ACT.cat=c=>{S.cat=c;S.n=0;Prefs.set({cat:c});grid();$('colecao').scrollIntoView({behavior:'smooth'})};
 ACT.more=()=>{S.n=(S.n||DB.set.page)+DB.set.page;grid()};
 ACT.rl=v=>{const[i,d]=v.split(':'),e=$('rl-'+i);if(e)e.scrollBy({left:d*e.clientWidth*.9,behavior:'smooth'})};
 ACT.open=id=>{const p=DB.prod.find(x=>x.id==id);if(!p)return;PM.p=p;PM.i=0;PM.z=false;drawP();modal('pm',1);$('pmb').scrollTop=0};

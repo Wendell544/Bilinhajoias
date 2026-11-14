@@ -8,7 +8,8 @@ const A = {
   fq: '',
   pl: 20,
   del: null,
-  lastAct: Date.now()
+  lastAct: Date.now(),
+  setBg: null
 };
 
 const TABS = ['Produtos', 'Banners', 'Categorias', 'Anúncios', 'Aparência', 'Senha'];
@@ -19,13 +20,17 @@ const MG = {
   banners: {
     t: 'Banners',
     on: 'Exibir no site',
-    h: 'Imagem ideal Largo: 1600×700 px. Imagem ideal Vertical: 800×1400 px. A ordem da lista é a ordem do carrossel.',
+    h: 'Imagem ideal Horizontal: 1600×700 px. Vertical: 800×1400 px. O modo Adaptável fica Horizontal no PC e Vertical no Celular.',
     f: [
       ['title', 'Título'],
       ['sub', 'Subtítulo'],
       ['btn', 'Texto do botão'],
       ['link', 'Link do botão (vazio = WhatsApp)'],
-      ['layout', 'Formato', 'select', [['horizontal', 'Largo (Paisagem)'], ['vertical', 'Vertical (Retrato)']]]
+      ['layout', 'Formato', 'select', [
+        ['horizontal', 'Horizontal (PC e Celular)'], 
+        ['vertical', 'Vertical (PC e Celular)'],
+        ['auto', 'Adaptável (Horizontal no PC, Vertical no Celular)']
+      ]]
     ]
   },
   categories: {
@@ -37,7 +42,7 @@ const MG = {
   ads: {
     t: 'Anúncios',
     on: 'Anúncio ativo',
-    h: 'Ficam mais bonitos com imagens de 800x600px.',
+    h: '',
     f: [
       ['title', 'Título'],
       ['text', 'Texto'],
@@ -160,25 +165,15 @@ async function show(n) {
     phs();
     plist();
   }
+  if (A.tab === 4) {
+    A.setBg = DB.set.hero_bg?.u || DB.set.hero_bg || null;
+    setpv();
+  }
   if (k) {
     const x = A.m.id && DB[k].find((y) => y.id == A.m.id);
     if (x) fillM(x);
     else A.m.id = null;
     mpv();
-  }
-  if (A.tab === 4 && navigator.storage && navigator.storage.estimate) {
-    navigator.storage.estimate().then((e) => {
-      const t = $('stq');
-      if (t)
-        t.textContent =
-          'Armazenamento: ' +
-          (e.usage / 1048576).toFixed(1) +
-          ' MB de ' +
-          Math.round(e.quota / 1048576) +
-          ' MB. Local: ' +
-          Store.info().items +
-          ' itens.';
-    });
   }
   IMG.hydrate?.($('ab'));
 }
@@ -406,6 +401,15 @@ async function upM(files) {
   }
 }
 
+async function upSet(files) {
+  if (!files.length) return;
+  const r = await upRun([files[0]]);
+  if (r.refs[0]) {
+    A.setBg = r.refs[0].u;
+    setpv();
+  }
+}
+
 async function saveP() {
   const g = (k) => $('pf-' + k).value.trim(),
     t = g('title'),
@@ -462,6 +466,12 @@ const mpv = () => {
   e.innerHTML = A.m.img ? IMG.html({ u: A.m.img }, { s: 'thumb' }) : '<span class="sm tm">Sem imagem</span>';
 };
 
+const setpv = () => {
+  const e = $('setpv');
+  if (!e) return;
+  e.innerHTML = A.setBg ? IMG.html({ u: A.setBg }, { s: 'thumb' }) : '<span class="sm tm">Sem imagem</span>';
+};
+
 function fillM(x) {
   MG[A.m.k].f.forEach(([f, l, type]) => {
     const e = $('mf-' + f);
@@ -516,7 +526,7 @@ function tMgr(k) {
           <span class="th br">${x.img ? IMG.html({ u: x.img.u || x.img }, { s: 'thumb' }) : ''}</span>
           <div class="grow">
             <b>${esc(x.title || x.name || '(sem título)')}</b>
-            <div class="sm tm">${x.on ? 'Ativo' : 'Pausado'} ${x.layout === 'vertical' ? '· Vertical' : ''}</div>
+            <div class="sm tm">${x.on ? 'Ativo' : 'Pausado'} ${x.layout === 'vertical' ? '· Vertical' : x.layout === 'auto' ? '· Adaptável' : ''}</div>
           </div>
           <div class="row wrap">
             <button class="b ghost" data-a="medit" data-v="${k}:${x.id}">Editar</button>
@@ -541,7 +551,20 @@ function tSet() {
       t === 'ta'
         ? `<label class="lb full">${l}<textarea class="in" id="sf-${k}" rows="3">${esc(s[k])}</textarea></label>`
         : `<label class="lb">${l}<input class="in" id="sf-${k}" ${t === 'n' ? 'type=number ' : ''}value="${esc(s[k])}"></label>`
-    ).join('')}</div>
+    ).join('')}
+    
+    <div class="full col" style="margin-top:8px">
+      <div class="lb">Imagem de Fundo do Hero (Opcional)</div>
+      <div class="row wrap">
+        <span class="th big br" id="setpv"></span>
+        <label class="b ghost">Enviar imagem
+          <input class="hid" id="sf-file" type="file" accept="image/jpeg,image/png,image/webp">
+        </label>
+        <button class="b ghost" data-a="simgx">Remover imagem</button>
+      </div>
+    </div>
+    
+    </div>
     <h4 class="serif h3">Seções da loja</h4>
     <div class="row wrap" style="gap:4px 16px">${SH.map(
       ([k, l]) => `<label class="chk"><input type="checkbox" id="ss-${k}"${s.show[k] ? ' checked' : ''}>${l}</label>`
@@ -780,6 +803,11 @@ ACT.mimgx = () => {
   mpv();
 };
 
+ACT.simgx = () => {
+  A.setBg = null;
+  setpv();
+};
+
 ACT.msave = async (k) => {
   const m = MG[k];
   const o = { on: $('mf-on').checked };
@@ -887,6 +915,7 @@ ACT.sset = async () => {
     sec: n('sec', 2, 30),
     page: n('page', 4, 48),
     mb: n('mb', 1, 5),
+    hero_bg: A.setBg ? { u: A.setBg } : null,
     show: Object.fromEntries(SH.map(([k]) => [k, $('ss-' + k)?.checked ? 1 : 0]))
   };
 

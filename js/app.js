@@ -1,4 +1,3 @@
-/* Inicialização e eventos globais */
 document.addEventListener('click', (e) => {
   const t = e.target.closest('[data-a]');
   if (t) {
@@ -61,6 +60,9 @@ document.addEventListener('change', (e) => {
   } else if (t.id === 'mf-file') {
     upM([...t.files]);
     t.value = '';
+  } else if (t.id === 'sf-file') {
+    upSet([...t.files]);
+    t.value = '';
   }
 });
 
@@ -116,10 +118,7 @@ if (pf.theme) document.documentElement.dataset.theme = pf.theme;
 document.querySelectorAll('[data-i]').forEach((e) => (e.innerHTML = ic(e.dataset.i, +e.dataset.s || 20)));
 
 (async () => {
-  /* 1) Carregar dados do Supabase (ou seed se vazio) */
   await loadFromSupabase();
-
-  /* 2) Verificar sessão existente */
   const session = await Auth.getSession();
   if (session) {
     const user = session.user;
@@ -127,19 +126,13 @@ document.querySelectorAll('[data-i]').forEach((e) => (e.innerHTML = ic(e.dataset
       A.ok = true;
     }
   }
+  try { await IMG.migrateLegacy(); } catch (e) {}
 
-  /* 3) Migrar imagens antigas do IndexedDB (se houver) */
-  try {
-    await IMG.migrateLegacy();
-  } catch (e) {}
-
-  /* 4) Estado inicial da UI */
   S.cat = pf.cat || 'Todos';
   S.srt = pf.srt || 'feat';
   $('so').value = S.srt;
 
   render();
-
   setTimeout(openFromHash, 60);
 })();
 
