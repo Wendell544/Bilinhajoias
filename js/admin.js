@@ -901,15 +901,18 @@ ACT.cleanup = async () => {
   out.textContent = 'Limpando…';
   const session = await Auth.getSession();
   if (!session) return toast('Sessão expirada. Faça login novamente.');
-  const res = await fetch(`${SB_URL}/functions/v1/cleanup-orphans`, {
+
+  // AQUI ESTÁ A CORREÇÃO: Trocamos 'cleanup-orphans' por 'hyper-action'
+  const res = await fetch(`${SB_URL}/functions/v1/hyper-action`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${session.access_token}` }
   });
+
   let body;
   try {
     body = await res.json();
   } catch (e) {
-    out.textContent = 'Resposta inválida.';
+    out.textContent = 'Resposta inválida. Verifique se a função está publicada.';
     return;
   }
   if (!res.ok) {
