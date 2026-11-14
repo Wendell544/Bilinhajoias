@@ -12,27 +12,11 @@ const A = {
   setBg: null
 };
 
-const TABS = ['Produtos', 'Banners', 'Categorias', 'Anúncios', 'Aparência', 'Senha'];
-const MK = ['', 'banners', 'categories', 'ads'];
+const TABS = ['Produtos', 'Categorias', 'Anúncios', 'Aparência', 'Senha'];
+const MK = ['', 'categories', 'ads', '', ''];
 const PF = ['title', 'cat', 'price', 'promo', 'inst', 'desc'];
 
 const MG = {
-  banners: {
-    t: 'Banners',
-    on: 'Exibir no site',
-    h: 'Imagem ideal Horizontal: 1600×700 px. Vertical: 800×1400 px. O modo Adaptável fica Horizontal no PC e Vertical no Celular.',
-    f: [
-      ['title', 'Título'],
-      ['sub', 'Subtítulo'],
-      ['btn', 'Texto do botão'],
-      ['link', 'Link do botão (vazio = WhatsApp)'],
-      ['layout', 'Formato', 'select', [
-        ['horizontal', 'Horizontal (PC e Celular)'], 
-        ['vertical', 'Vertical (PC e Celular)'],
-        ['auto', 'Adaptável (Horizontal no PC, Vertical no Celular)']
-      ]]
-    ]
-  },
   categories: {
     t: 'Categorias',
     on: 'Categoria ativa',
@@ -42,7 +26,7 @@ const MG = {
   ads: {
     t: 'Anúncios',
     on: 'Anúncio ativo',
-    h: '',
+    h: 'Ficam mais bonitos com imagens de 800x600px.',
     f: [
       ['title', 'Título'],
       ['text', 'Texto'],
@@ -70,7 +54,6 @@ const SF = [
 const SH = [
   ['feat', 'Produtos em destaque'],
   ['best', 'Mais populares'],
-  ['promo', 'Promoções'],
   ['news', 'Lançamentos'],
   ['cats', 'Categorias'],
   ['ads', 'Anúncios']
@@ -160,12 +143,12 @@ async function show(n) {
   const k = MK[A.tab];
   if (k && (!A.m || A.m.k !== k)) A.m = { k, id: null, img: null };
 
-  $('ab').innerHTML = (await [tProd, () => tMgr('banners'), () => tMgr('categories'), () => tMgr('ads'), tSet, tPw][A.tab]());
+  $('ab').innerHTML = (await [tProd, () => tMgr('categories'), () => tMgr('ads'), tSet, tPw][A.tab]());
   if (A.tab === 0) {
     phs();
     plist();
   }
-  if (A.tab === 4) {
+  if (A.tab === 3) {
     A.setBg = DB.set.hero_bg?.u || DB.set.hero_bg || null;
     setpv();
   }
@@ -218,7 +201,7 @@ function tProd() {
           ${DB.categories.map((c) => `<option>${esc(c.name)}</option>`).join('')}
         </select>
       </label>
-      ${F('pf-inst', 'Parcelamento', 'maxlength=40 placeholder="10x sem juros"')}
+      ${F('pf-inst', 'Parcelamento (ex: 12x sem juros)', 'maxlength=40 placeholder="12x sem juros (ou só 12)"')}
       ${F('pf-price', 'Preço original (R$)', 'type=number min=0 step=0.01 inputmode=decimal')}
       ${F('pf-promo', 'Preço promocional (R$)', 'type=number min=0 step=0.01 inputmode=decimal')}
       <label class="chk"><input type="checkbox" id="pf-av" checked>Disponível para venda</label>

@@ -34,7 +34,7 @@ document.addEventListener('keydown', (e) => {
     if (A.tab === 0) {
       e.preventDefault();
       if ($('pf-title')) saveP();
-    } else if (A.tab === 4) {
+    } else if (A.tab === 3) {
       e.preventDefault();
       ACT.sset();
     }
@@ -107,7 +107,6 @@ $('so').addEventListener('change', () => {
   grid();
 });
 
-document.addEventListener('visibilitychange', () => (document.hidden ? stop() : auto()));
 addEventListener('pagehide', () => {
   if (A.ok && A.tab === 0) drsNow();
 });

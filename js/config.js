@@ -1,7 +1,6 @@
-﻿const V = 8, PFX = 'bilinha_joias_', KEY = {
+﻿const V = 9, PFX = 'bilinha_joias_', KEY = {
   prod: PFX + 'products',
   cart: PFX + 'cart',
-  ban: PFX + 'banners',
   ads: PFX + 'ads',
   cats: PFX + 'cats',
   set: PFX + 'settings',
@@ -10,7 +9,6 @@
   draft: PFX + 'draft',
   pw: PFX + 'k2',
   lock: PFX + 'lock',
-  oban: PFX + 'banner',
   hist: PFX + 'hist',
   adm: PFX + 'adm',
   chg: PFX + 'chg',
@@ -41,7 +39,7 @@ const SET0 = {
   page: 12,
   mb: 5,
   hero_bg: null,
-  show: { feat: 1, promo: 1, news: 1, cats: 1, ads: 1, best: 1 }
+  show: { feat: 1, news: 1, cats: 1, ads: 1, best: 1 }
 };
 
 const ACT = {};

@@ -38,7 +38,7 @@ const Store = {
   }
 };
 
-const DB = { prod: [], cart: [], banners: [], ads: [], categories: [], set: {} };
+const DB = { prod: [], cart: [], ads: [], categories: [], set: {} };
 
 const okP = (p) =>
   p &&
@@ -56,9 +56,8 @@ const lk = (o) =>
     : wa('Olá! Vi “' + (o.title || 'o anúncio') + '” no site e gostaria de saber mais.');
 
 async function loadFromSupabase() {
-  const [prodRes, banRes, adsRes, catsRes, setRes] = await Promise.all([
+  const [prodRes, adsRes, catsRes, setRes] = await Promise.all([
     SB.from('products').select('*').order('sort_order', { ascending: true }),
-    SB.from('banners').select('*').order('sort_order', { ascending: true }),
     SB.from('ads').select('*').order('sort_order', { ascending: true }),
     SB.from('categories').select('*').order('sort_order', { ascending: true }),
     SB.from('settings').select('data').eq('id', 1).maybeSingle()
@@ -70,7 +69,6 @@ async function loadFromSupabase() {
     available: p.available !== false
   }));
 
-  DB.banners = banRes.data ?? [];
   DB.ads = adsRes.data ?? [];
   DB.categories = catsRes.data ?? [];
 
@@ -133,7 +131,6 @@ const Backup = {
     v: V,
     at: Date.now(),
     prod: DB.prod,
-    banners: DB.banners,
     ads: DB.ads,
     categories: DB.categories,
     set: DB.set
@@ -162,21 +159,14 @@ const Backup = {
       });
       if (rows.length) await SB.from('products').upsert(rows);
     }
-    const banners = d.banners ?? d.ban;
-    if (Array.isArray(banners)) {
-      await SB.from('banners').upsert(
-        banners.map(({ created_at, ...r }) => r)
-      );
-    }
     if (Array.isArray(d.ads)) {
       await SB.from('ads').upsert(
         d.ads.map(({ created_at, ...r }) => r)
       );
     }
-    const categories = d.categories ?? d.cats;
-    if (Array.isArray(categories)) {
+    if (Array.isArray(d.categories)) {
       await SB.from('categories').upsert(
-        categories.map(({ created_at, ...r }) => r)
+        d.categories.map(({ created_at, ...r }) => r)
       );
     }
     if (d.set && typeof d.set === 'object') {

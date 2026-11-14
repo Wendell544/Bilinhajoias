@@ -1,6 +1,22 @@
-const S={cat:'Todos',q:'',srt:'feat',n:0},BN={i:0,n:0,t:null,p:false},PM={p:null,i:0,z:false};let swp=0;
+const S={cat:'Todos',q:'',srt:'feat',n:0},PM={p:null,i:0,z:false};let swp=0;
 const pr=p=>p.promo>0&&p.promo<p.price?+p.promo:+p.price;
-const inst=p=>{const m=/^\s*(\d+)\s*x\s*(.*)$/i.exec(p.installment||'');return m&&+m[1]>1?(m[1]+'x de '+money(pr(p)/m[1])+' '+m[2]).trim():(p.installment||'')};
+
+const inst = (p) => {
+  if (!p.installment) return '';
+  const raw = String(p.installment).trim();
+  if (/^\d+x?$/i.test(raw)) {
+    const n = parseInt(raw.replace(/x/i, ''), 10);
+    if (n > 1) return `${n}x de ${money(pr(p) / n)} sem juros`;
+  }
+  const m = /^\s*(\d+)\s*x?\s*(.*)$/i.exec(raw);
+  if (m && +m[1] > 1) {
+    let txt = m[2] ? m[2].trim() : '';
+    if (txt.toLowerCase().startsWith('de ') || txt.toLowerCase() === 'vezes') txt = 'sem juros';
+    return `${m[1]}x de ${money(pr(p) / m[1])} ${txt || 'sem juros'}`.trim();
+  }
+  return raw;
+};
+
 const lines=()=>DB.cart.map(c=>({p:DB.prod.find(p=>p.id===c.id),qty:c.qty})).filter(l=>l.p);
 const total=L=>L.reduce((s,l)=>s+pr(l.p)*l.qty,0);
 
@@ -70,10 +86,6 @@ function rails(){
     const l=ids.map(id=>P.find(p=>p.id===id&&p.available!==false)).filter(Boolean).slice(0,8);
     if(l.length>=3)o.push(sec('best','Mais populares',l.map(card).join('')))
   }
-  if(s.promo){
-    const l=P.filter(p=>pr(p)<p.price).slice(0,12);
-    if(l.length)o.push(sec('promo','Promoções',l.map(card).join('')))
-  }
   if(s.news&&P.length>8){
     o.push(sec('news','Lançamentos',[...P].sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0)).slice(0,8).map(card).join('')))
   }
@@ -91,50 +103,6 @@ function grid(){
   mo.classList.toggle('hid',l.length<=m.length);
   mo.textContent='Ver mais peças ('+(l.length-m.length)+')';
   IMG.hydrate($('grid'))
-}
-
-function banner(){
-  const L=DB.banners.filter(b=>b.on),el=$('bnr');
-  stop();el.classList.toggle('hid',!L.length);$('hero').classList.toggle('hid',!!L.length);
-  if(!L.length){el.innerHTML='';return}
-  BN.n=L.length;BN.i=Math.min(BN.i,BN.n-1);
-  const layout = L[0]?.layout || 'horizontal';
-  el.innerHTML=`<div class="bn tx" data-layout="${layout}" id="bnv" role="region" aria-roledescription="carrossel" aria-label="Destaques da loja" tabindex="0"><div class="bn-t" id="bnt">${L.map((b,i)=>{
-    const t=b.title||b.sub||b.btn;
-    return`<div class="bn-s${b.img?' sk':' hero'}${i===BN.i?' on':''}" role="group" aria-roledescription="slide" aria-label="${i+1} de ${L.length}">
-      ${b.img?IMG.html(b.img,{s:'full',alt:b.title||'Banner',eager:i===0,now:1}):''}
-      ${t?`<div class="bn-c">${b.title?`<h2>${esc(b.title)}</h2>`:''}${b.sub?`<p>${esc(b.sub)}</p>`:''}${b.btn?`<a class="b gold" target="_blank" rel="noopener" href="${esc(lk(b))}">${esc(b.btn)}</a>`:''}</div>`
-        :b.link?`<a class="bn-l" target="_blank" rel="noopener" href="${esc(lk(b))}" aria-label="${esc(b.title||'Abrir banner')}"></a>`:''}
-    </div>`}).join('')}</div>
-    ${BN.n>1?`<button class="q bn-a pv" data-a="bn" data-v="-1" aria-label="Banner anterior">${ic('prev')}</button><button class="q bn-a nx" data-a="bn" data-v="1" aria-label="Próximo banner">${ic('next')}</button>
-    <div class="bn-d">${L.map((_,i)=>`<button data-a="bng" data-v="${i}" aria-label="Ir para o banner ${i+1}"><i></i></button>`).join('')}<button class="pz" id="bnz" data-a="bnp" aria-label="Pausar rotação">${ic(BN.p?'play':'pause',16)}</button></div>`:''}
-  </div>`;
-  IMG.hydrate(el);go(BN.i);auto();
-  const v=$('bnv');
-  let x0=null,mv=0;v.addEventListener('click',e=>{if(mv){e.preventDefault();e.stopPropagation();mv=0}},true);
-  v.addEventListener('pointerdown',e=>{x0=e.clientX;mv=0});
-  v.addEventListener('pointerup',e=>{if(x0!==null&&Math.abs(e.clientX-x0)>40){mv=1;go(BN.i+(e.clientX<x0?1:-1));auto()}x0=null});
-  v.addEventListener('mouseenter',stop);v.addEventListener('mouseleave',auto);
-  v.addEventListener('keydown',e=>{
-    if(e.key==='ArrowLeft'){go(BN.i-1);auto();e.preventDefault()}
-    else if(e.key==='ArrowRight'){go(BN.i+1);auto();e.preventDefault()}
-    else if(e.key===' '){ACT.bnp();e.preventDefault()}
-  });
-}
-function go(i){
-  BN.i=(i+BN.n)%BN.n;
-  const t=$('bnt');if(!t)return;
-  t.style.transform='translateX(-'+BN.i*100+'%)';
-  t.querySelectorAll('.bn-s').forEach((s,k)=>{s.setAttribute('aria-hidden',k!==BN.i);s.classList.toggle('on',k===BN.i)});
-  document.querySelectorAll('.bn-d button[data-a=bng]').forEach((b,k)=>b.classList.toggle('on',k===BN.i));
-}
-function stop(){clearInterval(BN.t)}
-function auto(){
-  stop();
-  if(BN.n<2||BN.p||document.hidden)return;
-  if(matchMedia('(prefers-reduced-motion:reduce)').matches)return;
-  if($('bnr').classList.contains('hid'))return;
-  BN.t=setInterval(()=>go(BN.i+1),Math.max(2,DB.set.sec||6)*1000)
 }
 
 function drawP(){
@@ -194,7 +162,7 @@ function footer(){
   $('ft').innerHTML=`<span class="tg">${ic('gem',26)}</span><div class="serif tg h2">Bilinha Jóias e Pratas</div>${s.about?`<p style="max-width:560px">${esc(s.about)}</p>`:''}<p>${esc(s.addr)}</p><div class="lk">${L.join('')}</div><button class="dots-btn" data-a="admin" tabindex="-1" aria-hidden="true">•••</button>`
 }
 
-const render=()=>{hero();banner();rails();grid();cartUI();footer()};
+const render=()=>{hero();rails();grid();cartUI();footer()};
 const pop=()=>{const b=$('bd');b.classList.remove('pop');void b.offsetWidth;b.classList.add('pop')};
 const cartSave=()=>{Store.set(KEY.cart,DB.cart);cartUI()};
 
@@ -225,9 +193,6 @@ ACT.share=async id=>{
     else{await navigator.clipboard.writeText(url);toast('Link copiado.')}
   }catch(e){}
 };
-ACT.bn=v=>{go(BN.i+ +v);auto()};
-ACT.bng=v=>{go(+v);auto()};
-ACT.bnp=()=>{BN.p=!BN.p;const z=$('bnz');if(!z)return;z.innerHTML=ic(BN.p?'play':'pause',16);z.setAttribute('aria-label',BN.p?'Retomar rotação':'Pausar rotação');BN.p?stop():auto()};
 ACT.theme=()=>{
   const r=document.documentElement;
   const d=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme: dark)').matches;
