@@ -1,5 +1,4 @@
-﻿/* Configuração global, constantes e utilitários de interface */
-const V = 6, PFX = 'bilinha_joias_', KEY = {
+﻿const V = 7, PFX = 'bilinha_joias_', KEY = {
   prod: PFX + 'products',
   cart: PFX + 'cart',
   ban: PFX + 'banners',
@@ -19,11 +18,9 @@ const V = 6, PFX = 'bilinha_joias_', KEY = {
   log: PFX + 'log'
 };
 
-/* ---- Supabase ---- */
 const SB_URL = 'https://ncrsodkpduroulzkpaky.supabase.co';
 const SB_KEY = 'sb_publishable_OOejb1xfSYPHVD8Xf4F09g_YT_Sa5lu';
 
-/* ---- GitHub (apenas exibição nas instruções) ---- */
 const GH_OWNER = 'Wendell544';
 const GH_REPO = 'Bilinhajoias';
 
@@ -42,7 +39,7 @@ const SET0 = {
   fb: '',
   sec: 6,
   page: 12,
-  mb: 8,
+  mb: 5,
   show: { feat: 1, promo: 1, news: 1, cats: 1, ads: 1, best: 1 }
 };
 
@@ -92,7 +89,6 @@ const drawer = (on) => {
   lock();
 };
 
-/* ---- Ícones SVG ---- */
 const IC = {
   gem: '<path d="M6 3h12l4 6-10 12L2 9z"/><path d="M11 3 8 9l4 12 4-12-3-6"/><path d="M2 9h20"/>',
   search: '<circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>',
@@ -128,7 +124,6 @@ const art = (h) =>
       ',22%,8%)"/></radialGradient></defs><rect width="400" height="400" fill="url(#g)"/><g fill="none" stroke="#D4AF37" stroke-width="3" stroke-linejoin="round"><path d="M140 150h120l40 50-100 110-100-110z"/><path d="M100 200h200M140 150l60 160 60-160M170 150l30 50 30-50"/></g><text x="200" y="365" text-anchor="middle" font-family="Georgia,serif" font-size="20" letter-spacing="6" fill="#D4AF37" opacity=".7">BILINHA</text></svg>',
   );
 
-/* ---- Dados de demonstração (seed inicial) ---- */
 const seed = () => [
   ['Colar de Prata 925 com Inicial', 'Colares', 189.9, 159.9, '6x sem juros', 'Prata 925 com banho de ródio, corrente de 45 cm e fecho lagosta.', 1, 215],
   ['Aliança de Ouro 18k', 'Alianças', 1490, 0, '10x sem juros', 'Ouro 18k, acabamento polido, 4 mm. Vendida por unidade.', 1, 42],
@@ -148,7 +143,8 @@ const seed = () => [
   description: a[5],
   featured: !!a[6],
   available: true,
-  images: [art(a[7])]
+  images: [art(a[7])],
+  created_at: new Date().toISOString()
 }));
 
 const ads0 = () => [
@@ -172,5 +168,4 @@ const ads0 = () => [
   }
 ];
 
-/* ---- Cliente Supabase (global) ---- */
 const SB = supabase.createClient(SB_URL, SB_KEY);

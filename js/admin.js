@@ -1,4 +1,3 @@
-/* Painel administrativo: produtos, banners, categorias, anúncios, aparência e senha */
 const A = {
   ok: false,
   tab: 0,
@@ -70,6 +69,17 @@ const SH = [
   ['cats', 'Categorias'],
   ['ads', 'Anúncios']
 ];
+
+const errMsg = (e) => {
+  const m = String((e && e.message) || e || '');
+  if (/duplicate key|unique constraint/i.test(m)) return 'Esse registro já existe.';
+  if (/foreign key/i.test(m)) return 'Referência inválida. Recarregue a página.';
+  if (/check constraint/i.test(m)) return 'Dados fora do padrão permitido. Revise os campos.';
+  if (/permission denied|row-level|rls/i.test(m)) return 'Sem permissão. Faça login novamente.';
+  if (/network|fetch|failed to fetch/i.test(m)) return 'Falha de conexão. Tente novamente.';
+  if (/password/i.test(m)) return 'Não foi possível alterar a senha. Tente novamente.';
+  return 'Não foi possível concluir. Tente novamente.';
+};
 
 const F = (id, l, x = '', c = '') =>
   `<label class="lb ${c}">${l}<input class="in" id="${id}" ${x}></label>`;
@@ -172,7 +182,6 @@ async function show(n) {
   IMG.hydrate?.($('ab'));
 }
 
-/* ---------- Produtos ---------- */
 function tProd() {
   const P = DB.prod,
     tot = P.filter((p) => p.available !== false).reduce((s, p) => s + pr(p), 0),
@@ -425,13 +434,13 @@ async function saveP() {
   if (A.edit) {
     const { error } = await SB.from('products').update(d).eq('id', A.edit);
     if (error) {
-      toast('Erro ao salvar: ' + error.message);
+      toast(errMsg(error));
       return;
     }
   } else {
     const { error } = await SB.from('products').insert({ ...d, sort_order: 0 });
     if (error) {
-      toast('Erro ao salvar: ' + error.message);
+      toast(errMsg(error));
       return;
     }
   }
@@ -564,7 +573,6 @@ const mv = async (v, d) => {
   show(A.tab);
 };
 
-/* ---------- Ações globais ---------- */
 ACT.admin = () => (A.ok ? enter() : modal('lg', 1));
 
 ACT.login = async () => {
@@ -679,14 +687,14 @@ ACT.pedit = (id) => {
 ACT.pdup = async (id) => {
   const p = DB.prod.find((x) => x.id == id);
   if (!p) return;
-  const { id: _omit, ...rest } = p;
+  const { id: _omit, created_at: _c, updated_at: _u, ...rest } = p;
   const { error } = await SB.from('products').insert({
     ...rest,
     title: p.title + ' (cópia)',
     featured: false,
     images: p.images || []
   });
-  if (error) return toast('Erro ao duplicar.');
+  if (error) return toast(errMsg(error));
   await loadFromSupabase();
   render();
   plist();
@@ -711,7 +719,7 @@ ACT.pdn = (id) => pmv(id, 1);
 ACT.pdel = async (id) => {
   if (A.del === 'p' + id) {
     const { error } = await SB.from('products').delete().eq('id', id);
-    if (error) return toast('Erro ao excluir.');
+    if (error) return toast(errMsg(error));
     A.del = null;
     await loadFromSupabase();
     render();
@@ -779,10 +787,10 @@ ACT.msave = async (k) => {
 
   if (A.m.id) {
     const { error } = await SB.from(k).update(o).eq('id', A.m.id);
-    if (error) return toast('Erro ao salvar: ' + error.message);
+    if (error) return toast(errMsg(error));
   } else {
     const { error } = await SB.from(k).insert({ ...o, sort_order: 0 });
-    if (error) return toast('Erro ao salvar: ' + error.message);
+    if (error) return toast(errMsg(error));
   }
 
   A.m = { k, id: null, img: null };
@@ -868,12 +876,12 @@ ACT.sset = async () => {
     fb: v('fb'),
     sec: n('sec', 2, 30),
     page: n('page', 4, 48),
-    mb: n('mb', 1, 20),
+    mb: n('mb', 1, 5),
     show: Object.fromEntries(SH.map(([k]) => [k, $('ss-' + k)?.checked ? 1 : 0]))
   };
 
   const { error } = await SB.from('settings').upsert({ id: 1, data });
-  if (error) return toast('Erro ao salvar: ' + error.message);
+  if (error) return toast(errMsg(error));
   await loadFromSupabase();
   render();
   toast('Configurações salvas.');
@@ -883,7 +891,7 @@ ACT.spw = async () => {
   const v = $('np').value;
   if (v.length < 8) return toast('Use 8 caracteres ou mais.');
   const { error } = await SB.auth.updateUser({ password: v });
-  if (error) return toast('Não foi possível alterar: ' + error.message);
+  if (error) return toast(errMsg(error));
   $('np').value = '';
   toast('Senha alterada com sucesso.');
 };
@@ -893,7 +901,7 @@ ACT.cleanup = async () => {
   out.textContent = 'Limpando…';
   const session = await Auth.getSession();
   if (!session) return toast('Sessão expirada. Faça login novamente.');
-  const res = await fetch(`${SB_URL}/functions/v1/hyper-action`, {
+  const res = await fetch(`${SB_URL}/functions/v1/cleanup-orphans`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${session.access_token}` }
   });
@@ -952,7 +960,6 @@ const errLog = () => {
   }</details>`;
 };
 
-/* Sessão expira após 30 min de inatividade */
 setInterval(() => {
   if (A.ok && Date.now() - A.lastAct > 30 * 60 * 1000) {
     A.ok = false;

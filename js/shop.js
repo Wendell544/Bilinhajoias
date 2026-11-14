@@ -1,4 +1,3 @@
-/* Loja pública: filtros, banner em carrossel, carrosséis de produtos, página do produto e sacola */
 const S={cat:'Todos',q:'',srt:'feat',n:0},BN={i:0,n:0,t:null,p:false},PM={p:null,i:0,z:false};let swp=0;
 const pr=p=>p.promo>0&&p.promo<p.price?+p.promo:+p.price;
 const inst=p=>{const m=/^\s*(\d+)\s*x\s*(.*)$/i.exec(p.installment||'');return m&&+m[1]>1?(m[1]+'x de '+money(pr(p)/m[1])+' '+m[2]).trim():(p.installment||'')};
@@ -19,7 +18,7 @@ function hero(){
 }
 const card=p=>{
   const v=pr(p),off=v<p.price,un=p.available===false;
-  const isNew=typeof p.id==='number'&&p.id>1e12&&(Date.now()-p.id<30*864e5);
+  const isNew=p.created_at&&(Date.now()-new Date(p.created_at).getTime()<30*864e5);
   return`<article class="cd${un?' un':''}">
     <div class="cd-i sk" data-a="open" data-v="${p.id}" role="button" tabindex="0" aria-label="Ver ${esc(p.title)}">
       ${IMG.html(p.images[0],{alt:p.title,s:'card'})}
@@ -66,7 +65,7 @@ function rails(){
     if(l.length)o.push(sec('promo','Promoções',l.map(card).join('')))
   }
   if(s.news&&P.length>8){
-    o.push(sec('news','Lançamentos',[...P].sort((a,b)=>b.id-a.id).slice(0,8).map(card).join('')))
+    o.push(sec('news','Lançamentos',[...P].sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0)).slice(0,8).map(card).join('')))
   }
   $('rails').innerHTML=o.join('');IMG.hydrate($('rails'))
 }
@@ -74,7 +73,7 @@ function rails(){
 function grid(){
   const t=nz(S.q.trim()),f=S.srt;
   const l=DB.prod.filter(p=>(S.cat==='Todos'||p.category===S.cat)&&nz(p.title+' '+p.category).includes(t));
-  l.sort((a,b)=>f==='lo'?pr(a)-pr(b):f==='hi'?pr(b)-pr(a):f==='new'?b.id-a.id:(b.featured?1:0)-(a.featured?1:0));
+  l.sort((a,b)=>f==='lo'?pr(a)-pr(b):f==='hi'?pr(b)-pr(a):f==='new'?new Date(b.created_at||0)-new Date(a.created_at||0):(b.featured?1:0)-(a.featured?1:0));
   const m=l.slice(0,S.n||DB.set.page);
   $('cnt').textContent=l.length+(l.length===1?' peça':' peças');
   $('grid').innerHTML=m.length?m.map(card).join(''):'<p class="empty tm">Nenhuma peça encontrada. Tente outra categoria ou busca.</p>';
@@ -238,7 +237,6 @@ ACT.fin=(v,a,e)=>{
   toast('Pedido pronto! Abrindo o WhatsApp…')
 };
 
-/* Deep link: #p=ID abre o produto */
 const openFromHash=()=>{
   const m=/^#p=(\d+)/.exec(location.hash);
   if(m){const p=DB.prod.find(x=>x.id==m[1]);if(p){ACT.open(p.id)}}

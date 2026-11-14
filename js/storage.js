@@ -1,6 +1,3 @@
-/* Persistência: dados agora vêm do Supabase (Postgres).
-   O carrinho e preferências permanecem locais (localStorage). */
-
 const Store = {
   get(k, d = null) {
     try {
@@ -29,8 +26,7 @@ const Store = {
     } catch (e) {}
   },
   info() {
-    let used = 0,
-      items = 0;
+    let used = 0, items = 0;
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i);
       if (k && k.startsWith(PFX)) {
@@ -59,7 +55,6 @@ const lk = (o) =>
     ? o.link
     : wa('Olá! Vi “' + (o.title || 'o anúncio') + '” no site e gostaria de saber mais.');
 
-/* ---------- Carregamento principal (assíncrono) ---------- */
 async function loadFromSupabase() {
   const [prodRes, banRes, adsRes, catsRes, setRes] = await Promise.all([
     SB.from('products').select('*').order('sort_order', { ascending: true }),
@@ -68,12 +63,6 @@ async function loadFromSupabase() {
     SB.from('categories').select('*').order('sort_order', { ascending: true }),
     SB.from('settings').select('data').eq('id', 1).maybeSingle()
   ]);
-
-  if (prodRes.error) console.error('load products:', prodRes.error);
-  if (banRes.error) console.error('load banners:', banRes.error);
-  if (adsRes.error) console.error('load ads:', adsRes.error);
-  if (catsRes.error) console.error('load categories:', catsRes.error);
-  if (setRes.error) console.error('load settings:', setRes.error);
 
   DB.prod = (prodRes.data ?? []).filter(okP).map((p) => ({
     ...p,
@@ -89,31 +78,31 @@ async function loadFromSupabase() {
   DB.set = { ...SET0, ...s };
   DB.set.show = { ...SET0.show, ...(s.show || {}) };
 
-  /* Carrinho local: manter apenas itens que ainda existem */
   DB.cart = (Store.get(KEY.cart, []) || []).filter(
     (c) => c && c.qty > 0 && DB.prod.some((p) => p.id === c.id)
   );
 
-  /* Se não houver nenhum produto, usar seed apenas em modo demonstração */
-  if (!DB.prod.length) {
+  const isDev =
+    location.hostname === 'localhost' ||
+    location.hostname === '127.0.0.1' ||
+    location.protocol === 'file:';
+
+  if (!DB.prod.length && isDev) {
     DB.prod = seed();
   }
 }
 
-/* ---------- Preferências (tema, categoria, ordenação) ---------- */
 const Prefs = {
   get: () => Store.get(KEY.pref, {}),
   set: (o) => Store.set(KEY.pref, { ...Prefs.get(), ...o })
 };
 
-/* ---------- Rascunho de produto ---------- */
 const Draft = {
   get: () => Store.get(KEY.draft),
   set: (v) => Store.set(KEY.draft, v),
   clear: () => Store.del(KEY.draft)
 };
 
-/* ---------- Log de erros ---------- */
 const Log = {
   get: () => Store.get(KEY.log, []),
   add(m) {
@@ -123,7 +112,6 @@ const Log = {
   }
 };
 
-/* ---------- Histórico de interesse (populares) ---------- */
 const Hist = {
   get: () => Store.get(KEY.hist, {}),
   bump: (id) => {
@@ -140,7 +128,6 @@ const Hist = {
   }
 };
 
-/* ---------- Backup / Restore (agora exporta o estado atual do DB) ---------- */
 const Backup = {
   dump: () => ({
     v: V,
@@ -164,21 +151,34 @@ const Backup = {
   async load(file) {
     const d = JSON.parse(await file.text());
     if (!d || typeof d !== 'object') throw new Error('inválido');
-    /* Restaurar via Supabase (upsert em massa) */
     if (Array.isArray(d.prod)) {
-      const rows = d.prod.filter(okP).map((p) => ({
-        ...p,
-        available: p.available !== false,
-        images: Array.isArray(p.images) ? p.images : []
-      }));
+      const rows = d.prod.filter(okP).map((p) => {
+        const { created_at, ...rest } = p;
+        return {
+          ...rest,
+          available: p.available !== false,
+          images: Array.isArray(p.images) ? p.images : []
+        };
+      });
       if (rows.length) await SB.from('products').upsert(rows);
     }
-    /* Aceita formato novo (banners/categories) e backup antigo (ban/cats) */
     const banners = d.banners ?? d.ban;
-    if (Array.isArray(banners)) await SB.from('banners').upsert(banners);
-    if (Array.isArray(d.ads)) await SB.from('ads').upsert(d.ads);
+    if (Array.isArray(banners)) {
+      await SB.from('banners').upsert(
+        banners.map(({ created_at, ...r }) => r)
+      );
+    }
+    if (Array.isArray(d.ads)) {
+      await SB.from('ads').upsert(
+        d.ads.map(({ created_at, ...r }) => r)
+      );
+    }
     const categories = d.categories ?? d.cats;
-    if (Array.isArray(categories)) await SB.from('categories').upsert(categories);
+    if (Array.isArray(categories)) {
+      await SB.from('categories').upsert(
+        categories.map(({ created_at, ...r }) => r)
+      );
+    }
     if (d.set && typeof d.set === 'object') {
       await SB.from('settings').upsert({ id: 1, data: d.set });
     }
