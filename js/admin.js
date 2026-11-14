@@ -421,27 +421,24 @@ async function saveP() {
     images: A.imgs.map((r) => (typeof r === 'string' ? { u: r } : r))
   };
 
+  // --- OTIMIZAÇÃO DE VELOCIDADE AQUI ---
+  // Em vez de recarregar o banco, atualizamos o array DB local na hora!
   if (A.edit) {
-    const { error } = await SB.from('products').update(d).eq('id', A.edit);
-    if (error) {
-      toast(errMsg(error));
-      return;
-    }
+    const { data, error } = await SB.from('products').update(d).eq('id', A.edit).select().single();
+    if (error) return toast(errMsg(error));
+    DB.prod = DB.prod.map((p) => p.id === A.edit ? data : p);
   } else {
-    const { error } = await SB.from('products').insert({ ...d, sort_order: 0 });
-    if (error) {
-      toast(errMsg(error));
-      return;
-    }
+    const { data, error } = await SB.from('products').insert({ ...d, sort_order: 0 }).select().single();
+    if (error) return toast(errMsg(error));
+    DB.prod.unshift(data);
   }
 
   A.edit = null;
   A.imgs = [];
   A.sel = 0;
   Draft.clear();
-  await loadFromSupabase();
-  render();
-  show(0);
+  render(); // Atualiza a loja na memória instantaneamente
+  show(0);  // Atualiza o painel na memória instantaneamente
   toast('Produto salvo.');
 }
 
@@ -587,7 +584,7 @@ const mv = async (v, d) => {
   const orders = L.map((x) => x.sort_order ?? 0);
   [orders[i], orders[j]] = [orders[j], orders[i]];
   await SB.from(k).upsert(L.map((x, idx) => ({ id: x.id, sort_order: orders[idx] })));
-  await loadFromSupabase();
+  await loadFromSupabase(); // Aqui é necessário recarregar para garantir a ordem
   render();
   show(A.tab);
 };
@@ -707,14 +704,14 @@ ACT.pdup = async (id) => {
   const p = DB.prod.find((x) => x.id == id);
   if (!p) return;
   const { id: _omit, created_at: _c, updated_at: _u, ...rest } = p;
-  const { error } = await SB.from('products').insert({
+  const { data, error } = await SB.from('products').insert({
     ...rest,
     title: p.title + ' (cópia)',
     featured: false,
     images: p.images || []
-  });
+  }).select().single();
   if (error) return toast(errMsg(error));
-  await loadFromSupabase();
+  DB.prod.splice(DB.prod.findIndex(x => x.id == id) + 1, 0, data);
   render();
   plist();
   toast('Produto duplicado.');
@@ -740,7 +737,7 @@ ACT.pdel = async (id) => {
     const { error } = await SB.from('products').delete().eq('id', id);
     if (error) return toast(errMsg(error));
     A.del = null;
-    await loadFromSupabase();
+    DB.prod = DB.prod.filter(x => x.id != id);
     render();
     show(0);
     toast('Produto excluído.');
@@ -809,16 +806,18 @@ ACT.msave = async (k) => {
   }
   if (o.link && !okUrl(o.link)) return toast('O link deve começar com http:// ou https://');
 
+  // --- OTIMIZAÇÃO AQUI TAMBÉM ---
   if (A.m.id) {
-    const { error } = await SB.from(k).update(o).eq('id', A.m.id);
+    const { data, error } = await SB.from(k).update(o).eq('id', A.m.id).select().single();
     if (error) return toast(errMsg(error));
+    DB[k] = DB[k].map((x) => x.id === A.m.id ? data : x);
   } else {
-    const { error } = await SB.from(k).insert({ ...o, sort_order: 0 });
+    const { data, error } = await SB.from(k).insert({ ...o, sort_order: 0 }).select().single();
     if (error) return toast(errMsg(error));
+    DB[k].push(data);
   }
 
   A.m = { k, id: null, img: null };
-  await loadFromSupabase();
   render();
   show(A.tab);
   toast('Salvo com sucesso.');
@@ -832,7 +831,7 @@ ACT.mtog = async (v) => {
     x = DB[k].find((y) => y.id == id);
   if (!x) return;
   await SB.from(k).update({ on: !x.on }).eq('id', id);
-  await loadFromSupabase();
+  x.on = !x.on;
   render();
   show(A.tab);
 };
@@ -848,8 +847,8 @@ ACT.mdel = async (v) => {
   if (A.del === key) {
     await SB.from(k).delete().eq('id', id);
     A.del = null;
+    DB[k] = DB[k].filter((y) => y.id != id);
     if (A.m && A.m.id == id) A.m = { k, id: null, img: null };
-    await loadFromSupabase();
     render();
     show(A.tab);
     toast('Excluído.');
@@ -907,7 +906,7 @@ ACT.sset = async () => {
 
   const { error } = await SB.from('settings').upsert({ id: 1, data });
   if (error) return toast(errMsg(error));
-  await loadFromSupabase();
+  DB.set = data;
   render();
   toast('Configurações salvas.');
 };

@@ -32,14 +32,35 @@ const IMG = (() => {
     return new Promise((r) => c.toBlob(r, type, q));
   };
 
-  const enc = async (s, max, q = 0.85) => {
+  const enc = async (s, max, q = 0.8) => {
     let b = await cv(s, max, 'image/webp', q);
     if (!b || b.type !== 'image/webp') b = await cv(s, max, 'image/jpeg', q);
     return b;
   };
 
+  // Comprime a imagem original de forma inteligente buscando o alvo de ~150kb
+  const optimize = async (s) => {
+    let max = 1500;
+    let q = 0.80;
+    let b = await enc(s, max, q);
+    
+    // Se ainda estiver pesado (> 200kb), reduz para 1200px e 0.70
+    if (b && b.size > 200 * 1024) {
+      max = 1200;
+      q = 0.70;
+      b = await enc(s, max, q);
+    }
+    // Se ainda estiver > 250kb (fotos muito complexas), força 1000px e 0.65
+    if (b && b.size > 250 * 1024) {
+      max = 1000;
+      q = 0.65;
+      b = await enc(s, max, q);
+    }
+    return b;
+  };
+
   async function one(f) {
-    const mb = DB.set.mb || 8;
+    const mb = DB.set.mb || 5;
     if (f.size > mb * MB) throw new Error(`${f.name}: passa de ${mb} MB.`);
     if (!TYPES.includes(f.type) && !/\.(jpe?g|png|webp|heic|heif|gif|avif)$/i.test(f.name)) {
       throw new Error(`${f.name}: formato não permitido (use JPG, PNG ou WebP).`);
@@ -52,7 +73,8 @@ const IMG = (() => {
       throw new Error(`${f.name}: imagem inválida ou corrompida.`);
     }
 
-    const full = await enc(s, 2000, 0.85);
+    // Otimiza a imagem principal
+    const full = await optimize(s);
     if (!full) throw new Error(`${f.name}: não foi possível processar a imagem.`);
 
     const k = 'i:' + (await hash(full));
@@ -125,8 +147,6 @@ const IMG = (() => {
     return `<img src="${esc(src)}" alt="${alt}" decoding="async"${eager}${o.eager ? '' : ' loading="lazy"'}>`;
   };
 
-  /* Remove a classe .sk do wrapper quando a imagem carrega OU falha.
-     Isso resolve o "carregando para sempre" quando a URL está quebrada. */
   const hydrate = (root) => {
     if (!root || !root.querySelectorAll) return;
     root.querySelectorAll('img').forEach((img) => {
@@ -134,20 +154,15 @@ const IMG = (() => {
         const parent = img.closest('.sk, .cd-i, .bn-s, .ac-i, .ct-i, .ci-i, .th, .phi, .pm-main, .pm-th');
         if (parent) parent.classList.remove('sk');
       };
-      if (img.complete) {
-        clean();
-      } else {
+      if (img.complete) clean();
+      else {
         img.addEventListener('load', clean, { once: true });
         img.addEventListener('error', clean, { once: true });
       }
     });
   };
 
-  /* Migração legada: mantida como stub para compatibilidade com app.js */
-  async function migrateLegacy() {
-    // Na arquitetura nova (GitHub + Supabase), não há IndexedDB para migrar.
-    // Se algum dia reativar, implemente aqui.
-  }
+  async function migrateLegacy() {}
 
   return { upload, html, hydrate, migrateLegacy };
 })();
