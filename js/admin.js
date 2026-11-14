@@ -320,14 +320,14 @@ function drsNow() {
 const drs = debounce(drsNow, 400);
 
 let upBusy = false;
-async function upRun(files) {
+async function upRun(files, isBanner = false) {
   if (upBusy) {
     toast('Aguarde o envio atual terminar.');
     return { refs: [], errs: [], dups: 0 };
   }
   upBusy = true;
   try {
-    const r = await upRun0(files);
+    const r = await upRun0(files, isBanner);
     r.errs.forEach((m) => Log.add('Upload: ' + m));
     return r;
   } catch (e) {
@@ -339,7 +339,7 @@ async function upRun(files) {
   }
 }
 
-async function upRun0(files) {
+async function upRun0(files, isBanner) {
   const p = $('pgp'), b = p ? p.firstElementChild : null;
   if (p) p.classList.remove('hid');
   if (b) b.style.width = '5%';
@@ -347,7 +347,7 @@ async function upRun0(files) {
   const r = await IMG.upload(files, (n, t) => {
     if (b) b.style.width = Math.round((n / t) * 100) + '%';
     if ($('pgt')) $('pgt').textContent = 'Processando ' + n + ' de ' + t + '…';
-  });
+  }, isBanner);
   
   setTimeout(() => { if (p) p.classList.add('hid'); }, 600);
   
@@ -368,7 +368,7 @@ async function upP(files) {
     toast('Limite de 12 fotos por produto.');
     return;
   }
-  const r = await upRun(files.slice(0, room));
+  const r = await upRun(files.slice(0, room), false); // PRODUTO: false
   r.refs.forEach((x) => {
     if (!A.imgs.some((y) => (R(y)?.u || '') === x.u)) A.imgs.push(x);
   });
@@ -379,7 +379,7 @@ async function upP(files) {
 
 async function upM(files) {
   if (!files.length) return;
-  const r = await upRun([files[0]]);
+  const r = await upRun([files[0]], true); // BANNER/ANÚNCIO: true
   if (r.refs[0]) {
     A.m.img = r.refs[0].u;
     mpv();
@@ -388,7 +388,7 @@ async function upM(files) {
 
 async function upSet(files) {
   if (!files.length) return;
-  const r = await upRun([files[0]]);
+  const r = await upRun([files[0]], true); // FUNDO HERO: true
   if (r.refs[0]) {
     A.setBg = r.refs[0].u;
     setpv();
@@ -421,8 +421,6 @@ async function saveP() {
     images: A.imgs.map((r) => (typeof r === 'string' ? { u: r } : r))
   };
 
-  // --- OTIMIZAÇÃO DE VELOCIDADE AQUI ---
-  // Em vez de recarregar o banco, atualizamos o array DB local na hora!
   if (A.edit) {
     const { data, error } = await SB.from('products').update(d).eq('id', A.edit).select().single();
     if (error) return toast(errMsg(error));
@@ -437,8 +435,8 @@ async function saveP() {
   A.imgs = [];
   A.sel = 0;
   Draft.clear();
-  render(); // Atualiza a loja na memória instantaneamente
-  show(0);  // Atualiza o painel na memória instantaneamente
+  render();
+  show(0);
   toast('Produto salvo.');
 }
 
@@ -584,7 +582,7 @@ const mv = async (v, d) => {
   const orders = L.map((x) => x.sort_order ?? 0);
   [orders[i], orders[j]] = [orders[j], orders[i]];
   await SB.from(k).upsert(L.map((x, idx) => ({ id: x.id, sort_order: orders[idx] })));
-  await loadFromSupabase(); // Aqui é necessário recarregar para garantir a ordem
+  await loadFromSupabase();
   render();
   show(A.tab);
 };
@@ -806,7 +804,6 @@ ACT.msave = async (k) => {
   }
   if (o.link && !okUrl(o.link)) return toast('O link deve começar com http:// ou https://');
 
-  // --- OTIMIZAÇÃO AQUI TAMBÉM ---
   if (A.m.id) {
     const { data, error } = await SB.from(k).update(o).eq('id', A.m.id).select().single();
     if (error) return toast(errMsg(error));

@@ -1,4 +1,4 @@
-/* Imagens: compressão WebP, upload para Edge Function (GitHub) e geração de <img>. */
+/* Imagens: compressão WebP extrema, upload para Edge Function e geração de <img>. */
 const IMG = (() => {
   const TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif', 'image/gif'];
   const MB = 1024 * 1024;
@@ -38,28 +38,32 @@ const IMG = (() => {
     return b;
   };
 
-  // Comprime a imagem original de forma inteligente buscando o alvo de ~150kb
-  const optimize = async (s) => {
-    let max = 1500;
-    let q = 0.80;
+  const optimize = async (s, isBanner) => {
+    // Banner: começa com 1920px e tenta ficar < 250kb
+    // Produto: começa com 1200px e tenta ficar < 150kb
+    let max = isBanner ? 1920 : 1200;
+    let q = 0.82;
+    let targetSize = isBanner ? 250 * 1024 : 150 * 1024;
+    
     let b = await enc(s, max, q);
     
-    // Se ainda estiver pesado (> 200kb), reduz para 1200px e 0.70
-    if (b && b.size > 200 * 1024) {
-      max = 1200;
-      q = 0.70;
+    // Loop agressivo reduzindo qualidade
+    while (b && b.size > targetSize && q > 0.5) {
+      q -= 0.1;
       b = await enc(s, max, q);
     }
-    // Se ainda estiver > 250kb (fotos muito complexas), força 1000px e 0.65
-    if (b && b.size > 250 * 1024) {
-      max = 1000;
-      q = 0.65;
+
+    // Se mesmo assim estiver muito grande, reduz a resolução drasticamente
+    if (b && b.size > targetSize * 1.5) {
+      max = isBanner ? 1200 : 800;
+      q = 0.6;
       b = await enc(s, max, q);
     }
+    
     return b;
   };
 
-  async function one(f) {
+  async function one(f, isBanner) {
     const mb = DB.set.mb || 5;
     if (f.size > mb * MB) throw new Error(`${f.name}: passa de ${mb} MB.`);
     if (!TYPES.includes(f.type) && !/\.(jpe?g|png|webp|heic|heif|gif|avif)$/i.test(f.name)) {
@@ -73,8 +77,7 @@ const IMG = (() => {
       throw new Error(`${f.name}: imagem inválida ou corrompida.`);
     }
 
-    // Otimiza a imagem principal
-    const full = await optimize(s);
+    const full = await optimize(s, isBanner);
     if (!full) throw new Error(`${f.name}: não foi possível processar a imagem.`);
 
     const k = 'i:' + (await hash(full));
@@ -120,12 +123,12 @@ const IMG = (() => {
     return (h >>> 0).toString(16) + u.length.toString(16);
   }
 
-  async function upload(files, onProgress) {
+  async function upload(files, onProgress, isBanner = false) {
     const refs = [], errs = [];
     let n = 0, dups = 0;
     for (const f of files) {
       try {
-        const o = await one(f);
+        const o = await one(f, isBanner);
         if (o.dup) dups++;
         refs.push(o.ref);
       } catch (e) {
