@@ -39,7 +39,11 @@ const card=p=>{
 };
 const adCard=a=>`<article class="ac sf br">
   ${a.img?`<div class="ac-i sk">${IMG.html(a.img,{alt:a.title})}</div>`:'<div class="ac-g"></div>'}
-  <div class="ac-b"><h3 class="serif h3">${esc(a.title)}</h3><p class="tm">${esc(a.text)}</p>${a.btn?`<a class="b ghost" target="_blank" rel="noopener" href="${esc(lk(a))}">${esc(a.btn)}</a>`:''}</div>
+  <div class="ac-b">
+    ${a.title?`<h4 class="serif">${esc(a.title)}</h4>`:''}
+    ${a.text?`<p class="tm sm">${esc(a.text)}</p>`:''}
+    ${a.btn?`<a class="b ghost sm" target="_blank" rel="noopener" href="${esc(lk(a))}">${esc(a.btn)}</a>`:''}
+  </div>
 </article>`;
 const sec=(id,t,inner,c='')=>`<section class="w sec"><div class="row sp"><h2 class="serif h2">${t}</h2><div class="row"><button class="q" data-a="rl" data-v="${id}:-1" aria-label="Anterior">${ic('prev')}</button><button class="q" data-a="rl" data-v="${id}:1" aria-label="Próximo">${ic('next')}</button></div></div><div class="rl${c}" id="rl-${id}">${inner}</div></section>`;
 
@@ -88,7 +92,8 @@ function banner(){
   stop();el.classList.toggle('hid',!L.length);$('hero').classList.toggle('hid',!!L.length);
   if(!L.length){el.innerHTML='';return}
   BN.n=L.length;BN.i=Math.min(BN.i,BN.n-1);
-  el.innerHTML=`<div class="bn${L.some(b=>b.title||b.sub||b.btn)?' tx':''}" id="bnv" role="region" aria-roledescription="carrossel" aria-label="Destaques da loja" tabindex="0"><div class="bn-t" id="bnt">${L.map((b,i)=>{
+  const isVert = L.some(b => b.layout === 'vertical');
+  el.innerHTML=`<div class="bn${isVert?' vert':''}${L.some(b=>b.title||b.sub||b.btn)?' tx':''}" id="bnv" role="region" aria-roledescription="carrossel" aria-label="Destaques da loja" tabindex="0"><div class="bn-t" id="bnt">${L.map((b,i)=>{
     const t=b.title||b.sub||b.btn;
     return`<div class="bn-s${b.img?' sk':' hero'}${i===BN.i?' on':''}" role="group" aria-roledescription="slide" aria-label="${i+1} de ${L.length}">
       ${b.img?IMG.html(b.img,{s:'full',alt:b.title||'Banner',eager:i===0,now:1}):''}

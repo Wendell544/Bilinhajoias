@@ -19,12 +19,13 @@ const MG = {
   banners: {
     t: 'Banners',
     on: 'Exibir no site',
-    h: 'Imagem ideal: 1600×700 px. Banner só com imagem (sem textos) aparece inteiro. A ordem da lista é a ordem do carrossel.',
+    h: 'Imagem ideal Largo: 1600×700 px. Imagem ideal Vertical: 800×1400 px. A ordem da lista é a ordem do carrossel.',
     f: [
       ['title', 'Título'],
       ['sub', 'Subtítulo'],
       ['btn', 'Texto do botão'],
-      ['link', 'Link do botão (vazio = WhatsApp)']
+      ['link', 'Link do botão (vazio = WhatsApp)'],
+      ['layout', 'Formato', 'select', [['horizontal', 'Largo (Paisagem)'], ['vertical', 'Vertical (Retrato)']]]
     ]
   },
   categories: {
@@ -36,7 +37,7 @@ const MG = {
   ads: {
     t: 'Anúncios',
     on: 'Anúncio ativo',
-    h: '',
+    h: 'Ficam mais bonitos com imagens de 800x600px.',
     f: [
       ['title', 'Título'],
       ['text', 'Texto'],
@@ -462,7 +463,11 @@ const mpv = () => {
 };
 
 function fillM(x) {
-  MG[A.m.k].f.forEach(([f]) => ($('mf-' + f).value = x[f] || ''));
+  MG[A.m.k].f.forEach(([f, l, type]) => {
+    const e = $('mf-' + f);
+    if (!e) return;
+    e.value = x[f] !== undefined && x[f] !== null ? x[f] : (type === 'select' ? 'horizontal' : '');
+  });
   $('mf-on').checked = x.on !== false;
   A.m.img = x.img?.u || x.img || null;
 }
@@ -476,7 +481,12 @@ function tMgr(k) {
     <h3 class="serif h3">${A.m.id ? 'Editar' : 'Novo'}: ${m.t}</h3>
     ${m.h ? `<p class="sm tm">${m.h}</p>` : ''}
     <div class="fm">
-      ${m.f.map(([f, l]) => F('mf-' + f, l, 'maxlength=140')).join('')}
+      ${m.f.map(([f, l, type, opts]) => {
+        if (type === 'select') {
+          return `<label class="lb">${l}<select class="in" id="mf-${f}">${opts.map(o => `<option value="${o[0]}">${o[1]}</option>`).join('')}</select></label>`;
+        }
+        return F('mf-' + f, l, 'maxlength=140');
+      }).join('')}
       <label class="chk"><input type="checkbox" id="mf-on" checked>${m.on}</label>
       <div class="full col">
         <div class="lb">Imagem</div>
@@ -506,7 +516,7 @@ function tMgr(k) {
           <span class="th br">${x.img ? IMG.html({ u: x.img.u || x.img }, { s: 'thumb' }) : ''}</span>
           <div class="grow">
             <b>${esc(x.title || x.name || '(sem título)')}</b>
-            <div class="sm tm">${x.on ? 'Ativo' : 'Pausado'}</div>
+            <div class="sm tm">${x.on ? 'Ativo' : 'Pausado'} ${x.layout === 'vertical' ? '· Vertical' : ''}</div>
           </div>
           <div class="row wrap">
             <button class="b ghost" data-a="medit" data-v="${k}:${x.id}">Editar</button>
@@ -901,18 +911,15 @@ ACT.cleanup = async () => {
   out.textContent = 'Limpando…';
   const session = await Auth.getSession();
   if (!session) return toast('Sessão expirada. Faça login novamente.');
-
-  // AQUI ESTÁ A CORREÇÃO: Trocamos 'cleanup-orphans' por 'hyper-action'
   const res = await fetch(`${SB_URL}/functions/v1/hyper-action`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${session.access_token}` }
   });
-
   let body;
   try {
     body = await res.json();
   } catch (e) {
-    out.textContent = 'Resposta inválida. Verifique se a função está publicada.';
+    out.textContent = 'Resposta inválida.';
     return;
   }
   if (!res.ok) {
