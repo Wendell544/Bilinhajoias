@@ -357,22 +357,24 @@ async function upRun(files) {
 }
 
 async function upRun0(files) {
-  const p = $('pgp'),
-    b = p.firstElementChild;
-  p.classList.remove('hid');
-  b.style.width = '5%';
+  const p = $('pgp'), b = p ? p.firstElementChild : null;
+  if (p) p.classList.remove('hid');
+  if (b) b.style.width = '5%';
+  
   const r = await IMG.upload(files, (n, t) => {
-    b.style.width = Math.round((n / t) * 100) + '%';
-    $('pgt').textContent = 'Processando ' + n + ' de ' + t + '…';
+    if (b) b.style.width = Math.round((n / t) * 100) + '%';
+    if ($('pgt')) $('pgt').textContent = 'Processando ' + n + ' de ' + t + '…';
   });
-  setTimeout(() => p.classList.add('hid'), 600);
-  $('pgt').textContent = [
-    r.refs.length ? r.refs.length + ' foto(s) otimizada(s) em WebP' : '',
-    r.dups ? r.dups + ' já existia(m)' : '',
-    ...r.errs
-  ]
-    .filter(Boolean)
-    .join(' · ');
+  
+  setTimeout(() => { if (p) p.classList.add('hid'); }, 600);
+  
+  if ($('pgt')) {
+    $('pgt').textContent = [
+      r.refs.length ? r.refs.length + ' foto(s) otimizada(s) em WebP' : '',
+      r.dups ? r.dups + ' já existia(m)' : '',
+      ...r.errs
+    ].filter(Boolean).join(' · ');
+  }
   return r;
 }
 
@@ -562,6 +564,7 @@ function tSet() {
         </label>
         <button class="b ghost" data-a="simgx">Remover imagem</button>
       </div>
+      ${UP}
     </div>
     
     </div>
